@@ -1,4 +1,4 @@
-# apply_pose_template_v3.py — FK applier with sign-locked semantics
+# FK applier with sign-locked semantics
 # Blender 4.2+, local XYZ Euler only. No fingers, no locations/scales.
 
 import bpy, math
@@ -47,7 +47,11 @@ POSE_DEGREES = {
     "LeftForeArm":[0.0, 0.0, 0.0],
     "LeftHand":[0.0, 0.0, 0.0],
 
-    # right arm (same semantics mirrored)
+    # right arm
+    # RightShoulder:X=backward, Y=backward, Z=up
+    # RightArm:     X=forward, Y=backward, Z=up
+    # RightForeArm: Y=unclenches (hinge) — write Y only
+    # RightHand:    X=left, Y=up, Z=backward
     "RightShoulder":[0.0, 0.0, 0.0],
     "RightArm":[0.0, 0.0, 0.0],
     "RightForeArm":[0.0, 0.0, 0.0],
