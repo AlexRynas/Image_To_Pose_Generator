@@ -1,93 +1,37 @@
-# FK applier with sign-locked semantics
-# Blender 4.2+, local XYZ Euler only. No fingers, no locations/scales.
+# apply_pose_template.py
+# MPFB "GameEngine" FK pose applier
+# - Blender 4.2+
+# - Local XYZ Euler only (degrees → radians inside)
+# - Drive *deform bones* directly; no controllers, no keyframes, no loc/scale edits
 
 import bpy, math
 
-ARMATURE_NAME = "Armature"
+ARMATURE_NAME = "Armature"   # change if your armature object is named differently
 
-# Bones to pose
+# Exact bones from your GameEngine armature report (parent→child order)
 BONES_ORDER = [
-    "Hips","Spine","Spine1","Spine2","Spine3","Neck","Neck1","Head",
-    "LeftShoulder","LeftArm","LeftForeArm","LeftHand",
-    "RightShoulder","RightArm","RightForeArm","RightHand",
-    "LeftUpLeg","LeftLeg","LeftFoot","LeftToeBase",
-    "RightUpLeg","RightLeg","RightFoot","RightToeBase",
+    "pelvis",
+    "spine_01","spine_02","spine_03",
+    "neck_01","head",
+    "clavicle_l","upperarm_l","lowerarm_l","hand_l",
+    "clavicle_r","upperarm_r","lowerarm_r","hand_r",
+    "thigh_l","calf_l","foot_l","ball_l",
+    "thigh_r","calf_r","foot_r","ball_r",
 ]
 
-# Optional safety toggles
-SWAP_LR = False            # flip L<->R if the image was mirrored
+# Optional toggles
+SWAP_LR   = False   # flip L<->R if the reference image is mirrored
+AUTO_HINGE = True   # detect hinge axis via Limit Rotation constraints
 
-# Auto-detect hinge axis from Limit Rotation (falls back to static sets below)
-AUTO_HINGE = True
+# Static hinge fallback when AUTO_HINGE is off or inconclusive
+HINGE_Y_ONLY = {"lowerarm_l","lowerarm_r","calf_l","calf_r"}   # elbows/knees
 
-# Static hinge fallback (used if AUTO_HINGE=False or detection is inconclusive)
-HINGE_Y_ONLY = {"LeftForeArm","RightForeArm","LeftLeg","RightLeg"}
-
-# ---- FILL THIS ONLY ----
-POSE_DEGREES = {
-    # pelvis / spine (X=left, Y=up, Z=right)
-    "Hips":   [0.0, 0.0, 0.0],
-    "Spine":  [0.0, 0.0, 0.0],
-    "Spine1": [0.0, 0.0, 0.0],
-    "Spine2": [0.0, 0.0, 0.0],
-    "Spine3": [0.0, 0.0, 0.0],
-
-    # neck / head (X=left, Y=up, Z=right) — e.g. down-left => X>0, Y<0
-    "Neck":   [0.0, 0.0, 0.0],
-    "Neck1":  [0.0, 0.0, 0.0],
-    "Head":   [0.0, 0.0, 0.0],
-
-    # left arm
-    # LeftShoulder: X=backward, Y=backward, Z=up
-    # LeftArm:      X=forward,  Y=backward, Z=up
-    # LeftForeArm:  Y=unclenches (hinge) — write Y only
-    # LeftHand:     X=right, Y=up, Z=backward
-    "LeftShoulder":[0.0, 0.0, 0.0],
-    "LeftArm":[0.0, 0.0, 0.0],
-    "LeftForeArm":[0.0, 0.0, 0.0],
-    "LeftHand":[0.0, 0.0, 0.0],
-
-    # right arm
-    # RightShoulder:X=backward, Y=backward, Z=up
-    # RightArm:     X=forward, Y=backward, Z=up
-    # RightForeArm: Y=unclenches (hinge) — write Y only
-    # RightHand:    X=left, Y=up, Z=backward
-    "RightShoulder":[0.0, 0.0, 0.0],
-    "RightArm":[0.0, 0.0, 0.0],
-    "RightForeArm":[0.0, 0.0, 0.0],
-    "RightHand":[0.0, 0.0, 0.0],
-
-    # legs/feet
-    # LeftUpLeg:   X=right, Y=forward, Z=right
-    # LeftLeg:     Y=forward (hinge)
-    # LeftFoot:    X=right, Y=up, Z=right
-    # LeftToeBase: X=right, Y=up, Z=right
-    "LeftUpLeg":[0.0, 0.0, 0.0],
-    "LeftLeg":[0.0, 0.0, 0.0],
-    "LeftFoot":[0.0, 0.0, 0.0],
-    "LeftToeBase":[0.0, 0.0, 0.0],
-
-    # RightUpLeg:  X=left, Y=forward, Z=left
-    # RightLeg:    Y=forward (hinge)
-    # RightFoot:   X=left, Y=up, Z=left
-    # RightToeBase:X=left, Y=up, Z=left
-    "RightUpLeg":[0.0, 0.0, 0.0],
-    "RightLeg":[0.0, 0.0, 0.0],
-    "RightFoot":[0.0, 0.0, 0.0],
-    "RightToeBase":[0.0, 0.0, 0.0],
-}
-# ---- END FILL ----
-
-# Optional L/R swap mapping (used if SWAP_LR=True)
+# Left/Right swap map
 LR_MAP = {
-    "LeftShoulder":"RightShoulder","RightShoulder":"LeftShoulder",
-    "LeftArm":"RightArm","RightArm":"LeftArm",
-    "LeftForeArm":"RightForeArm","RightForeArm":"LeftForeArm",
-    "LeftHand":"RightHand","RightHand":"LeftHand",
-    "LeftUpLeg":"RightUpLeg","RightUpLeg":"LeftUpLeg",
-    "LeftLeg":"RightLeg","RightLeg":"LeftLeg",
-    "LeftFoot":"RightFoot","RightFoot":"LeftFoot",
-    "LeftToeBase":"RightToeBase","RightToeBase":"LeftToeBase",
+    "clavicle_l":"clavicle_r","upperarm_l":"upperarm_r","lowerarm_l":"lowerarm_r","hand_l":"hand_r",
+    "clavicle_r":"clavicle_l","upperarm_r":"upperarm_l","lowerarm_r":"lowerarm_l","hand_r":"hand_l",
+    "thigh_l":"thigh_r","calf_l":"calf_r","foot_l":"foot_r","ball_l":"ball_r",
+    "thigh_r":"thigh_l","calf_r":"calf_l","foot_r":"foot_l","ball_r":"ball_l",
 }
 
 def _ensure_pose_mode(obj):
@@ -99,37 +43,37 @@ def _swap_lr_key(name):
     return LR_MAP.get(name, name) if SWAP_LR else name
 
 def _auto_hinge_axis(pb):
+    """Return 'x'|'y'|'z' if exactly one rotation axis is allowed by a Limit Rotation constraint."""
     if not AUTO_HINGE:
         return None
-    lr = next((c for c in pb.constraints if c.type=='LIMIT_ROTATION' and not c.mute), None)
+    lr = next((c for c in pb.constraints if getattr(c, 'type', None) == 'LIMIT_ROTATION' and not getattr(c, 'mute', False)), None)
     if not lr:
         return None
     def axis_allowed(a):
-        use = getattr(lr, f"use_limit_{a}")
-        if not use:
+        use = getattr(lr, f"use_limit_{a}", False)
+        if not use:  # no explicit limit → treat as permitted
             return True
-        mn = getattr(lr, f"min_{a}")
-        mx = getattr(lr, f"max_{a}")
-        # Locked if min==max==0
-        return not (abs(mn) < 1e-6 and abs(mx) < 1e-6)
+        mn = getattr(lr, f"min_{a}", 0.0)
+        mx = getattr(lr, f"max_{a}", 0.0)
+        return not (abs(mn) < 1e-6 and abs(mx) < 1e-6)  # locked if min≈max≈0
     allowed = [axis_allowed('x'), axis_allowed('y'), axis_allowed('z')]
-    if sum(allowed) == 1:
-        return ['x','y','z'][allowed.index(True)]
-    return None
+    return ['x','y','z'][allowed.index(True)] if sum(allowed) == 1 else None
 
 def _set_euler(arm_obj, bone_name, rx, ry, rz):
+    """Apply rotation, mapping the user's Y value to the detected hinge axis so LLMs can always write flex on Y."""
     pb = arm_obj.pose.bones.get(bone_name)
     if not pb:
         print(f"[WARN] Missing bone: {bone_name}")
         return
     pb.rotation_mode = 'XYZ'
-    # Hinge handling
     hinge = _auto_hinge_axis(pb)
     if hinge:
+        # Prefer user's Y as "flex"; if Y is ~0, use the largest magnitude among X/Z.
+        flex = ry if abs(ry) > 1e-6 else (rx if abs(rx) >= abs(rz) else rz)
         cur = list(pb.rotation_euler)
-        if hinge == 'x': cur[0] = rx
-        if hinge == 'y': cur[1] = ry
-        if hinge == 'z': cur[2] = rz
+        if hinge == 'x': cur[0] = flex
+        elif hinge == 'y': cur[1] = flex
+        else: cur[2] = flex
         pb.rotation_euler = tuple(cur)
     elif bone_name in HINGE_Y_ONLY:
         cur = list(pb.rotation_euler)
@@ -151,6 +95,43 @@ def apply_pose(arm_obj, pose_deg):
         _set_euler(arm_obj, name, math.radians(dx), math.radians(dy), math.radians(dz))
     bpy.context.view_layer.update()
 
+# ---- FILL THIS ONLY (degrees) ----
+POSE_DEGREES = {
+    # torso
+    "pelvis":   [0.0, 0.0, 0.0],
+    "spine_01": [0.0, 0.0, 0.0],
+    "spine_02": [0.0, 0.0, 0.0],
+    "spine_03": [0.0, 0.0, 0.0],
+
+    # neck / head
+    "neck_01":  [0.0, 0.0, 0.0],
+    "head":     [0.0, 0.0, 0.0],
+
+    # left arm
+    "clavicle_l":[0.0, 0.0, 0.0],
+    "upperarm_l":[0.0, 0.0, 0.0],
+    "lowerarm_l":[0.0, 0.0, 0.0],
+    "hand_l":   [0.0, 0.0, 0.0],
+
+    # right arm
+    "clavicle_r":[0.0, 0.0, 0.0],
+    "upperarm_r":[0.0, 0.0, 0.0],
+    "lowerarm_r":[0.0, 0.0, 0.0],
+    "hand_r":   [0.0, 0.0, 0.0],
+
+    # left leg
+    "thigh_l":  [0.0, 0.0, 0.0],
+    "calf_l":   [0.0, 0.0, 0.0],
+    "foot_l":   [0.0, 0.0, 0.0],
+    "ball_l":   [0.0, 0.0, 0.0],
+
+    # right leg
+    "thigh_r":  [0.0, 0.0, 0.0],
+    "calf_r":   [0.0, 0.0, 0.0],
+    "foot_r":   [0.0, 0.0, 0.0],
+    "ball_r":   [0.0, 0.0, 0.0],
+}
+
 def main():
     arm = bpy.data.objects.get(ARMATURE_NAME)
     if not arm or arm.type != 'ARMATURE':
@@ -158,7 +139,7 @@ def main():
     _ensure_pose_mode(arm)
     reset_rotations(arm)
     apply_pose(arm, POSE_DEGREES)
-    print("[apply_pose_template_v3] pose applied.")
+    print("[apply_pose_template_gameengine] Pose applied.")
 
 if __name__ == "__main__":
     main()
