@@ -15,7 +15,7 @@ POSE_TEXT_START
 (Insert pose paragraph here — anatomical left/right, global stance/lean, head/neck yaw/pitch/tilt, torso orientation/lean/side-bend, shoulders/arms/elbows/forearms/hands, hips/legs/knees/feet, occlusions/uncertainties.)
 POSE_TEXT_END
 
-2) OPTIONAL PHOTO: A single image of the same pose. Use only to **clarify** details that the POSE TEXT leaves ambiguous. If the image contradicts the POSE TEXT, prefer **POSE TEXT** unless the contradiction is minor phrasing and the geometry clearly agrees with anchors.
+2) OPTIONAL PHOTO: A single image of the same pose. Use only to **clarify** details that the POSE TEXT leaves ambiguous.
 
 # OUTPUT (WHAT TO RETURN)
 - Return **ONE fenced code block** with language tag `python` containing **only**:
@@ -75,12 +75,21 @@ Legs/Feet
 5) Prefer small magnitudes when uncertain. Symmetry checks: contrapposto often implies pelvis/head counter-rotation.
 6) Clamp to plausible human ranges; if still unsure, use 0.
 
+# SIGN MAP (INTERNAL—do not output). Convert biomechanical words to your axis signs:
+- Hip flexion ⇒ thigh_ X = negative* (leg forward).
+- Hip extension ⇒ thigh_ X = positive* (leg back).
+- Shoulder flexion (reach forward) ⇒ upperarm_ X = positive*.
+- Shoulder abduction/elevation ⇒ upperarm_ Y = positive*.
+- Lower/bring arm down: right: upperarm_r Z positive lowers; left: upperarm_l Z positive raises (per your meanings); use Z for small height trims.
+
 # SELF-CHECK GATES (must pass before output)
 - **Anchor Sign Check**: Each non-zero angle’s sign matches the anchor meanings above.
 - **Left/Right Consistency**: No inadvertent mirroring; bone names match anatomical sides in POSE TEXT.
 - **Hinge Compliance**: `lowerarm_*` and `calf_*` have non-zero X only; their Y/Z = 0.
 - **Ball Joints**: `ball_*` remain `[0,0,0]` unless the rig truly requires toe bend (default to 0).
 - **Global Coherence**: Pelvis/torso/head directions make sense together (e.g., if pelvis Y=+ left turn, head may counter-rotate per POSE TEXT).
+- **Shoulder Elevation Guardrail**: Unless POSE TEXT explicitly says “abducted/raised/elevated,” constrain clavicle_ Y ∈ [-5°, +5°]* and upperarm_ Y ∈ [-5°, +5°]**.
+Achieve bar reach with upperarm_ X ≈ 70–95° (flexion) and only small Z (right: +Z lowers; left: +Z raises) to align hand height with the bar plane.
 
 # OUTPUT RULES (HARD)
 - Respond with **one** fenced code block only, language tag `python`.
