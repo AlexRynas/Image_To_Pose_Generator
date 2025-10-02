@@ -2,51 +2,16 @@
 # You need to fill out the USER-SET ANCHORS section as shown in the examples to ensure the model can best describe the pose correctly.
 # Fill USER-SET ANCHORS and they become ground truth
 # Examples:
-# [USER_ANCHORS] Left hand=rear rack; Right hand=handlebar; Facing=left; Notes=visor shadow may hide wrist angles
-# [USER_ANCHORS] Left hand=occluded (likely on hip); Right hand=on thigh; Facing=¾ right
-# [USER_ANCHORS] Left hand=rear rack; Right hand=handlebar; Facing=left-profile; Notes=bicycle, seat-weighted
-# [USER_ANCHORS] Left hand=in left pocket (occluded); Right hand=at side; Facing=¾ right; Notes=standing relaxed
-# [USER_ANCHORS] Left hand=on hip; Right hand=holding phone at chest; Facing=¾ left; Notes=phone blocks wrist view
-# [USER_ANCHORS] Left hand=crossed over right biceps; Right hand=crossed under left arm; Facing=frontal; Notes=arms folded
-# [USER_ANCHORS] Left hand=raised overhead (open palm); Right hand=at side; Facing=frontal; Notes=mild spine extension
-# [USER_ANCHORS] Left hand=on floor; Right hand=on right thigh; Facing=right-profile; Notes=kneeling on right knee
-# [USER_ANCHORS] Left hand=on keyboard; Right hand=on mouse; Facing=frontal; Notes=seated at desk
-# [USER_ANCHORS] Left hand=forward swing; Right hand=back swing; Facing=left-profile; Notes=running stride
-# [USER_ANCHORS] Left hand=pressed together with right at sternum; Right hand=pressed together with left; Facing=frontal; Notes=tree pose, left foot on right thigh
-# [USER_ANCHORS] Left hand=lead glove forward; Right hand=guarding chin; Facing=¾ left; Notes=boxing stance
-# [USER_ANCHORS] Left hand=on guitar neck (fretboard); Right hand=over strings; Facing=¾ right; Notes=standing guitarist
-# [USER_ANCHORS] Left hand=holding crutch; Right hand=free; Facing=right-profile; Notes=weight biased to right leg
-# [USER_ANCHORS] Left hand=cradling infant; Right hand=supporting back; Facing=¾ right; Notes=head tilt right
-# [USER_ANCHORS] Left hand=holding suitcase; Right hand=free swing; Facing=left-profile; Notes=walking with carry
-# [USER_ANCHORS] Left hand=at 10 o’clock on wheel; Right hand=on gear lever; Facing=frontal; Notes=seated driver
-# [USER_ANCHORS] Left hand=on pushrim; Right hand=on lap; Facing=frontal; Notes=wheelchair, slight trunk flexion
-# [USER_ANCHORS] Left hand=clasped with right before chest; Right hand=clasped with left; Facing=frontal; Notes=air squat
-# [USER_ANCHORS] Left hand=on hip; Right hand=reaching overhead to shelf; Facing=¾ left; Notes=ankles dorsiflexed
-# [USER_ANCHORS] Left hand=clasped with right behind back; Right hand=clasped with left behind back; Facing=frontal; Notes=shoulders retracted
-# [USER_ANCHORS] Left hand=occluded behind torso (likely on hip); Right hand=holding cup; Facing=¾ right; Notes=shirt hides wrist
-# [USER_ANCHORS] Left hand=in coat pocket (occluded); Right hand=adjusting scarf; Facing=¾ left; Notes=winter wear covers neck
-# [USER_ANCHORS] Left hand=holding book; Right hand=pointing at screen; Facing=¾ right; Notes=lightly forward head
-# [USER_ANCHORS] Left hand=on abdomen; Right hand=on pillow; Facing=supine; Notes=lying on back
-# [USER_ANCHORS] Left hand=on forearm support; Right hand=on forearm support; Facing=prone; Notes=plank position, feet unseen
-# [USER_ANCHORS] Left hand=resting on stair rail; Right hand=mid-swing; Facing=up-stairs; Notes=camera slightly above
-# [USER_ANCHORS] Left hand=side extension (T); Right hand=forward reach; Facing=left-profile; Notes=dance arabesque, left leg back
-# [USER_ANCHORS] Left hand=tossing ball; Right hand=racket back; Facing=¾ right; Notes=tennis serve prep
-# [USER_ANCHORS] Left hand=on thigh (partly occluded); Right hand=unknown (fully occluded by bag); Facing=¾ left; Notes=mark right hand uncertain
-# [USER_ANCHORS] Left hand=on handlebar; Right hand=on brake hood; Facing=right-profile; Notes=road bike drops
-# [USER_ANCHORS] Left hand=holding leash; Right hand=at side; Facing=¾ right; Notes=dog outside frame
-# [USER_ANCHORS] Left hand=resting on knee; Right hand=chin support; Facing=¾ left; Notes=seated, elbow on table
-# [USER_ANCHORS] Left hand=palms together overhead; Right hand=palms together overhead; Facing=frontal; Notes=mountain pose reach
-# [USER_ANCHORS] Left hand=grabbing bar; Right hand=grabbing bar; Facing=frontal; Notes=pull-up hang, feet off frame
-# [USER_ANCHORS] Left hand=holding mic; Right hand=gesturing outward; Facing=frontal; Notes=on stage
-# [USER_ANCHORS] Left hand=on backpack strap; Right hand=on backpack strap; Facing=¾ right; Notes=standing, slight forward lean
-# [USER_ANCHORS] Left hand=resting on left cheek; Right hand=crossed over abdomen; Facing=¾ right; Notes=seated think pose
-# [USER_ANCHORS] Left hand=on hip; Right hand=on hip; Facing=frontal; Notes=power stance, feet wide
-# [USER_ANCHORS] Left hand=on railing; Right hand=on phone taking selfie; Facing=¾ right; Notes=mirror present—do NOT flip laterality
-# [USER_ANCHORS] Left hand=wave at shoulder height; Right hand=holding tote; Facing=¾ left; Notes=walking toward camera
+# Examples (collapsed by field):
+# Left hand=<at 10 o’clock on wheel; clasped with right before chest; clasped with right behind back; cradling infant; crossed over right biceps; forward swing; grabbing bar; holding book; holding crutch; holding leash; holding mic; holding suitcase; in coat pocket (occluded); in left pocket (occluded); lead glove forward; occluded (likely on hip); occluded behind torso (likely on hip); on abdomen; on backpack strap; on floor; on forearm support; on guitar neck (fretboard); on handlebar; on hip; on keyboard; on pushrim; on railing; on thigh (partly occluded); palms together overhead; pressed together with right at sternum; raised overhead (open palm); rear rack; resting on knee; resting on left cheek; resting on stair rail; side extension (T); tossing ball; wave at shoulder height>
+# Right hand=<adjusting scarf; at side; back swing; chin support; clasped with left; clasped with left behind back; crossed over abdomen; crossed under left arm; forward reach; free; free swing; gesturing outward; grabbing bar; guarding chin; handlebar; holding cup; holding phone at chest; holding tote; mid-swing; on backpack strap; on brake hood; on forearm support; on gear lever; on hip; on lap; on mouse; on phone taking selfie; on pillow; on right thigh; on thigh; over strings; palms together overhead; pointing at screen; pressed together with left; racket back; reaching overhead to shelf; supporting back; unknown (fully occluded by bag)>
+# Left foot=<on right thigh (tree pose)>
+# Right foot=<occluded; off frame; on floor>
+# Facing=<frontal; left; left-profile; prone; right-profile; supine; up-stairs; ¾ left; ¾ right>
+# Notes=<air squat; ankles dorsiflexed; arms folded; bicycle, seat-weighted; boxing stance; camera slightly above; dance arabesque, left leg back; dog outside frame; head tilt right; kneeling on right knee; lightly forward head; lying on back; mark right hand uncertain; mild spine extension; mirror present—do NOT flip laterality; mountain pose reach; on stage; phone blocks wrist view; plank position, feet unseen; power stance, feet wide; pull-up hang, feet off frame; road bike drops; running stride; seated at desk; seated driver; seated think pose; seated, elbow on table; shirt hides wrist; shoulders retracted; standing guitarist; standing relaxed; standing, slight forward lean; tennis serve prep; tree pose, left foot on right thigh; visor shadow may hide wrist angles; walking toward camera; walking with carry; weight biased to right leg; wheelchair, slight trunk flexion; winter wear covers neck>
 # Facing=uncertain (likely left)
 # Keep Facing to one of: frontal, left-profile, right-profile, ¾ left, ¾ right, supine, prone, or a brief context like up-stairs.
 # Use occluded, partly occluded, or unknown where visibility is limited.
-
 ROLE (system)
 You are a vision-and-kinematics analyst.
 
