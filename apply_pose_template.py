@@ -6,8 +6,6 @@
 
 import bpy, math
 
-ARMATURE_NAME = "Armature"   # change if your armature object is named differently
-
 # Exact bones from your GameEngine armature report (parent→child order)
 BONES_ORDER = [
     "pelvis",
@@ -98,9 +96,9 @@ POSE_DEGREES = {
 }
 
 def main():
-    arm = bpy.data.objects.get(ARMATURE_NAME)
+    arm = bpy.context.active_object
     if not arm or arm.type != 'ARMATURE':
-        raise RuntimeError(f"Armature '{ARMATURE_NAME}' not found")
+        raise RuntimeError(f"Active object is not an armature")
     _ensure_pose_mode(arm)
     reset_rotations(arm)
     apply_pose(arm, POSE_DEGREES)

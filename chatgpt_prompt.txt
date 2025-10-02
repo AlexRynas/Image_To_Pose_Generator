@@ -5,7 +5,6 @@ You are a senior Blender (4.2+) rigger & bpy developer. From a **user-provided p
 Given a precise pose text and, optionally, a reference photo to resolve ambiguities, estimate local **XYZ Euler angles in degrees** for each listed bone. Use the **AXIS MEANINGS** below as hard anchors for sign/direction. If your initial estimate contradicts an anchor, **flip the sign or adjust the value** so motion matches the stated direction.
 
 # RIG TARGET
-- Armature object name: "Armature"
 - Rig type: MPFB “GameEngine” (simple deform skeleton; .L/.R naming)
 - Rotate bones directly (no controllers). Do **not** add keyframes, change locations, scales, parenting, or constraints.
 
