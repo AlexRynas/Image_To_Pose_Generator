@@ -1,0 +1,65 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:ImageToPose.Desktop.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="ImageToPose.Desktop.Views.ReviewView"
+             x:DataType="vm:ReviewViewModel">
+    
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="700" Margin="40" Spacing="20">
+            <TextBlock Text="Review Extended Pose Description" 
+                       FontSize="28" 
+                       FontWeight="Bold" 
+                       Margin="0,0,0,10"/>
+            
+            <TextBlock TextWrapping="Wrap" FontSize="14">
+                Review the AI-generated extended pose description. You can edit it to refine details before generating the bone rotations.
+            </TextBlock>
+            
+            <StackPanel Spacing="10">
+                <TextBlock Text="Extended Pose Description:" FontWeight="SemiBold" FontSize="16"/>
+                <TextBox Text="{Binding ExtendedPoseText}" 
+                         AcceptsReturn="True" 
+                         TextWrapping="Wrap" 
+                         MinHeight="300"
+                         FontFamily="Consolas,Courier New,monospace"
+                         FontSize="13"/>
+            </StackPanel>
+            
+            <Border Background="#E3F2FD" 
+                    BorderBrush="#2196F3" 
+                    BorderThickness="1" 
+                    CornerRadius="8" 
+                    Padding="16">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="?? Tip" FontWeight="Bold" FontSize="14"/>
+                    <TextBlock TextWrapping="Wrap" FontSize="13">
+                        Make sure the description is detailed and accurate. Include information about:
+                        <LineBreak/>
+                        • Weight distribution and stance
+                        <LineBreak/>
+                        • Head and neck positioning (yaw, pitch, tilt)
+                        <LineBreak/>
+                        • Torso orientation and lean
+                        <LineBreak/>
+                        • Arm and hand positions
+                        <LineBreak/>
+                        • Leg and foot angles
+                        <LineBreak/>
+                        • Any occluded or uncertain parts
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+            
+            <Button Content="Continue to Generate Rig" 
+                    Command="{Binding ContinueCommand}"
+                    IsEnabled="{Binding CanContinue}"
+                    HorizontalAlignment="Center"
+                    FontSize="16"
+                    Padding="30,12"
+                    Margin="0,20,0,0"/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

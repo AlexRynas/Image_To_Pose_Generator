@@ -1,0 +1,88 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:ImageToPose.Desktop.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="ImageToPose.Desktop.Views.InputView"
+             x:DataType="vm:InputViewModel">
+    
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="700" Margin="40" Spacing="20">
+            <TextBlock Text="Input Image and Pose Description" 
+                       FontSize="28" 
+                       FontWeight="Bold" 
+                       Margin="0,0,0,10"/>
+            
+            <TextBlock TextWrapping="Wrap" FontSize="14">
+                Select a reference image and provide a rough description of the pose. The AI will analyze both to create a detailed pose description.
+            </TextBlock>
+            
+            <!-- Image Selection -->
+            <StackPanel Spacing="10">
+                <TextBlock Text="Reference Image:" FontWeight="SemiBold" FontSize="16"/>
+                <Button Content="Select Image..." 
+                        Command="{Binding SelectImageCommand}"
+                        HorizontalAlignment="Left"
+                        Padding="20,10"/>
+                
+                <TextBlock Text="{Binding ImagePath}" 
+                           TextWrapping="Wrap" 
+                           FontSize="12" 
+                           Foreground="Gray"
+                           IsVisible="{Binding ImagePath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                
+                <!-- Image Preview -->
+                <Border BorderBrush="Gray" 
+                        BorderThickness="1" 
+                        CornerRadius="8" 
+                        MaxWidth="400" 
+                        MaxHeight="400"
+                        HorizontalAlignment="Left"
+                        IsVisible="{Binding ImagePreview, Converter={x:Static ObjectConverters.IsNotNull}}">
+                    <Image Source="{Binding ImagePreview}" 
+                           Stretch="Uniform"/>
+                </Border>
+            </StackPanel>
+            
+            <!-- Pose Description -->
+            <StackPanel Spacing="10">
+                <TextBlock Text="Rough Pose Description:" FontWeight="SemiBold" FontSize="16"/>
+                <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="Gray">
+                    Provide details about the pose - e.g., "Standing with left hand raised, right hand on hip, weight on right leg"
+                </TextBlock>
+                <TextBox Text="{Binding RoughPoseText}" 
+                         AcceptsReturn="True" 
+                         TextWrapping="Wrap" 
+                         MinHeight="150"
+                         Watermark="Enter pose description here..."/>
+            </StackPanel>
+            
+            <!-- Error Message -->
+            <Border Background="#FFEBEE" 
+                    BorderBrush="#F44336" 
+                    BorderThickness="1" 
+                    CornerRadius="8" 
+                    Padding="12"
+                    IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <TextBlock Text="{Binding ErrorMessage}" 
+                           TextWrapping="Wrap" 
+                           Foreground="#D32F2F"/>
+            </Border>
+            
+            <!-- Processing Indicator -->
+            <StackPanel Orientation="Horizontal" Spacing="10" IsVisible="{Binding IsProcessing}">
+                <ProgressBar IsIndeterminate="True" Width="300" Height="4"/>
+                <TextBlock Text="Processing with AI..." VerticalAlignment="Center"/>
+            </StackPanel>
+            
+            <Button Content="Process Photo and Pose Description" 
+                    Command="{Binding ProcessImageAndPoseCommand}"
+                    IsEnabled="{Binding CanProcessImageAndPose}"
+                    HorizontalAlignment="Center"
+                    FontSize="16"
+                    Padding="30,12"
+                    Margin="0,20,0,0"/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,95 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:ImageToPose.Desktop.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="ImageToPose.Desktop.Views.ApiKeyView"
+             x:DataType="vm:ApiKeyViewModel">
+    
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="600" Margin="40" Spacing="20">
+            <TextBlock Text="OpenAI API Key" 
+                       FontSize="28" 
+                       FontWeight="Bold" 
+                       Margin="0,0,0,10"/>
+            
+            <TextBlock TextWrapping="Wrap" FontSize="14">
+                To use this application, you need an OpenAI API key. The key will be used to analyze images and generate pose descriptions.
+            </TextBlock>
+            
+            <StackPanel Spacing="8">
+                <TextBlock Text="API Key:" FontWeight="SemiBold"/>
+                <TextBox Text="{Binding ApiKey}" 
+                         Watermark="sk-..." 
+                         PasswordChar="•"
+                         FontSize="14"/>
+                <TextBlock FontSize="12" Foreground="Gray">
+                    Don't have an API key? 
+                    <TextBlock.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Open API Keys Page" Command="{Binding OpenApiKeyLinkCommand}"/>
+                        </ContextMenu>
+                    </TextBlock.ContextMenu>
+                </TextBlock>
+                <Button Content="Create or manage your API keys" 
+                        Command="{Binding OpenApiKeyLinkCommand}"
+                        HorizontalAlignment="Left"
+                        Margin="0,4,0,0"/>
+            </StackPanel>
+            
+            <!-- Error Message -->
+            <Border Background="#FFEBEE" 
+                    BorderBrush="#F44336" 
+                    BorderThickness="1" 
+                    CornerRadius="8" 
+                    Padding="12"
+                    IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <TextBlock Text="{Binding ErrorMessage}" 
+                           TextWrapping="Wrap" 
+                           Foreground="#D32F2F"/>
+            </Border>
+            
+            <!-- Success Message -->
+            <Border Background="#E8F5E9" 
+                    BorderBrush="#4CAF50" 
+                    BorderThickness="1" 
+                    CornerRadius="8" 
+                    Padding="12"
+                    IsVisible="{Binding IsValid}">
+                <TextBlock Text="? API key validated successfully!" 
+                           TextWrapping="Wrap" 
+                           Foreground="#388E3C"
+                           FontWeight="SemiBold"/>
+            </Border>
+            
+            <!-- Validating Indicator -->
+            <StackPanel Orientation="Horizontal" Spacing="10" IsVisible="{Binding IsValidating}">
+                <ProgressBar IsIndeterminate="True" Width="200" Height="4"/>
+                <TextBlock Text="Validating API key..." VerticalAlignment="Center"/>
+            </StackPanel>
+            
+            <Button Content="Validate and Continue" 
+                    Command="{Binding ValidateAndContinueCommand}"
+                    IsEnabled="{Binding CanValidateAndContinue}"
+                    HorizontalAlignment="Center"
+                    FontSize="16"
+                    Padding="30,12"
+                    Margin="0,20,0,0"/>
+            
+            <Border Background="#E3F2FD" 
+                    BorderBrush="#2196F3" 
+                    BorderThickness="1" 
+                    CornerRadius="8" 
+                    Padding="16"
+                    Margin="0,20,0,0">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="?? Privacy Note" FontWeight="Bold" FontSize="14"/>
+                    <TextBlock TextWrapping="Wrap" FontSize="13">
+                        Your API key is stored in memory only for this session. It is never saved to disk or transmitted anywhere except to OpenAI's servers for processing your requests.
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

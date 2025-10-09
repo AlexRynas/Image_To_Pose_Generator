@@ -1,0 +1,58 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ImageToPose.Desktop.ViewModels"
+        xmlns:views="using:ImageToPose.Desktop.Views"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="650"
+        x:Class="ImageToPose.Desktop.Views.MainWindow"
+        x:DataType="vm:WizardViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="Image To Pose Generator"
+        Width="900" Height="650"
+        WindowStartupLocation="CenterScreen">
+
+    <Design.DataContext>
+        <vm:WizardViewModel/>
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Header with Back Button -->
+        <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" Padding="16">
+            <Grid ColumnDefinitions="Auto,*">
+                <Button Grid.Column="0" 
+                        Content="? Back" 
+                        Command="{Binding NavigateBackCommand}"
+                        IsVisible="{Binding CanNavigateBack}"
+                        Margin="0,0,16,0"/>
+                <TextBlock Grid.Column="1" 
+                           Text="Image To Pose Generator" 
+                           FontSize="20" 
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <!-- Main Content Area -->
+        <ContentControl Grid.Row="1" Content="{Binding CurrentStepViewModel}">
+            <ContentControl.DataTemplates>
+                <DataTemplate DataType="vm:WelcomeViewModel">
+                    <views:WelcomeView/>
+                </DataTemplate>
+                <DataTemplate DataType="vm:ApiKeyViewModel">
+                    <views:ApiKeyView/>
+                </DataTemplate>
+                <DataTemplate DataType="vm:InputViewModel">
+                    <views:InputView/>
+                </DataTemplate>
+                <DataTemplate DataType="vm:ReviewViewModel">
+                    <views:ReviewView/>
+                </DataTemplate>
+                <DataTemplate DataType="vm:GenerateViewModel">
+                    <views:GenerateView/>
+                </DataTemplate>
+            </ContentControl.DataTemplates>
+        </ContentControl>
+    </Grid>
+
+</Window>

@@ -1,0 +1,115 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:ImageToPose.Desktop.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="ImageToPose.Desktop.Views.GenerateView"
+             x:DataType="vm:GenerateViewModel">
+    
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="700" Margin="40" Spacing="20">
+            <TextBlock Text="Generate Pose Rig Rotations" 
+                       FontSize="28" 
+                       FontWeight="Bold" 
+                       Margin="0,0,0,10"/>
+            
+            <TextBlock TextWrapping="Wrap" FontSize="14">
+                Generate bone rotations for the MPFB GameEngine rig in Blender based on your pose description.
+            </TextBlock>
+            
+            <!-- Generate Button -->
+            <Button Content="Generate Pose Rig Rotations" 
+                    Command="{Binding GeneratePoseRigCommand}"
+                    IsEnabled="{Binding CanGeneratePoseRig}"
+                    HorizontalAlignment="Center"
+                    FontSize="16"
+                    Padding="30,12"
+                    IsVisible="{Binding !HasGenerated}"/>
+            
+            <!-- Processing Indicator -->
+            <StackPanel Orientation="Horizontal" Spacing="10" IsVisible="{Binding IsGenerating}">
+                <ProgressBar IsIndeterminate="True" Width="300" Height="4"/>
+                <TextBlock Text="Generating rotations with AI..." VerticalAlignment="Center"/>
+            </StackPanel>
+            
+            <!-- Error Message -->
+            <Border Background="#FFEBEE" 
+                    BorderBrush="#F44336" 
+                    BorderThickness="1" 
+                    CornerRadius="8" 
+                    Padding="12"
+                    IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <TextBlock Text="{Binding ErrorMessage}" 
+                           TextWrapping="Wrap" 
+                           Foreground="#D32F2F"/>
+            </Border>
+            
+            <!-- Generated JSON -->
+            <StackPanel Spacing="10" IsVisible="{Binding HasGenerated}">
+                <TextBlock Text="Generated Bone Rotations:" FontWeight="SemiBold" FontSize="16"/>
+                
+                <Border Background="#F5F5F5" 
+                        BorderBrush="Gray" 
+                        BorderThickness="1" 
+                        CornerRadius="8" 
+                        Padding="16">
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto" MaxHeight="400">
+                        <TextBox Text="{Binding GeneratedJson}" 
+                                 IsReadOnly="True"
+                                 FontFamily="Consolas,Courier New,monospace"
+                                 FontSize="12"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 AcceptsReturn="True"
+                                 TextWrapping="NoWrap"/>
+                    </ScrollViewer>
+                </Border>
+                
+                <!-- Action Buttons -->
+                <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                    <Button Content="Copy to Clipboard" 
+                            Command="{Binding CopyToClipboardCommand}"
+                            IsEnabled="{Binding CanCopyToClipboard}"
+                            Padding="20,10"/>
+                    <Button Content="Save JSON..." 
+                            Command="{Binding SaveJsonCommand}"
+                            IsEnabled="{Binding CanSaveJson}"
+                            Padding="20,10"/>
+                </StackPanel>
+            </StackPanel>
+            
+            <!-- Blender Workflow Info -->
+            <Border Background="#E8F5E9" 
+                    BorderBrush="#4CAF50" 
+                    BorderThickness="1" 
+                    CornerRadius="8" 
+                    Padding="16"
+                    IsVisible="{Binding HasGenerated}"
+                    Margin="0,20,0,0">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Next Steps: Applying to Blender" FontWeight="Bold" FontSize="16"/>
+                    <TextBlock TextWrapping="Wrap" FontSize="13">
+                        To apply these rotations to your MPFB GameEngine rig in Blender:
+                        <LineBreak/>
+                        <LineBreak/>
+                        1. Copy the generated POSE_DEGREES dictionary
+                        <LineBreak/>
+                        2. Open the apply_pose_template.py script from the repository
+                        <LineBreak/>
+                        3. Replace the POSE_DEGREES variable with your generated data
+                        <LineBreak/>
+                        4. Run the script in Blender's Python console
+                        <LineBreak/>
+                        <LineBreak/>
+                        For retargeting to Cyberpunk 2077 rigs and automation options, see the Blender Workflow documentation.
+                    </TextBlock>
+                    <Button Content="Open Blender Workflow Documentation" 
+                            Command="{Binding OpenBlenderWorkflowDocsCommand}"
+                            HorizontalAlignment="Left"
+                            Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

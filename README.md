@@ -1,6 +1,6 @@
 # Image To Pose Generator
 
-A Blender addon/tool that generates character poses from reference images using AI-powered pose analysis and automated rigging.
+A comprehensive toolkit that generates character poses from reference images using AI-powered pose analysis and automated rigging. Available as both a Windows desktop application and Python scripts for Blender integration.
 
 ## Overview
 
@@ -8,10 +8,68 @@ This project enables you to:
 1. Analyze a reference image of a person to extract detailed pose descriptions
 2. Convert those descriptions into precise bone rotations for Blender armatures
 3. Automatically apply poses to your rigged characters
+4. Retarget poses to different rig types (including Cyberpunk 2077)
 
 The workflow combines computer vision analysis with biomechanical understanding to create accurate 3D poses from 2D references.
 
-## Features
+## 🖥️ Desktop Application (NEW!)
+
+**A standalone Windows application with a user-friendly wizard interface for generating poses from images.**
+
+### Features
+
+- **Step-by-step wizard workflow**: Intuitive interface guiding you from image selection to final pose generation
+- **OpenAI Integration**: Uses GPT-4 Vision for image analysis and GPT-4 for pose generation
+- **Real-time validation**: Validates your API key before proceeding
+- **Image preview**: See your reference image while working
+- **Editable descriptions**: Review and refine AI-generated pose descriptions
+- **JSON export**: Copy to clipboard or save bone rotations as JSON files
+- **Single executable**: No installation required - just download and run
+
+### Quick Start
+
+1. **Download** the latest release (single `.exe` file)
+2. **Run** `ImageToPose.Desktop.exe`
+3. **Provide your OpenAI API key** when prompted ([Get one here](https://platform.openai.com/api-keys))
+4. **Select a reference image** and describe the rough pose
+5. **Review** the AI-generated extended pose description
+6. **Generate** bone rotations for your MPFB GameEngine rig
+7. **Copy or save** the JSON output
+
+### Requirements
+
+- **Windows 10/11** (64-bit)
+- **OpenAI API key** (required - you provide your own)
+- Internet connection for API calls
+
+### Building from Source
+
+```bash
+cd src/DesktopApp
+dotnet build ImageToPose.sln
+
+# To create a single-file executable:
+dotnet publish ImageToPose.Desktop -c Release -r win-x64
+```
+
+The resulting executable will be in `bin/Release/net9.0/win-x64/publish/`.
+
+### Privacy & Security
+
+- ✅ Your API key is stored **in memory only** during the session
+- ✅ No data is saved to disk without your explicit action (Save JSON)
+- ✅ API calls go directly to OpenAI - no third-party servers
+- ⚠️ Requires your own OpenAI API key (API usage charges apply)
+
+See the [Blender Workflow Guide](docs/BlenderWorkflow.md) for detailed instructions on applying generated poses.
+
+---
+
+## 🐍 Python Scripts & Blender Integration
+
+This project also provides Python scripts for direct integration with Blender, allowing for greater customization and control over the pose generation process.
+
+### Features
 
 - **AI-Powered Pose Analysis**: Uses structured prompts to analyze human poses in images with anatomical precision
 - **Blender Integration**: Seamlessly works with Blender 4.2+ armatures

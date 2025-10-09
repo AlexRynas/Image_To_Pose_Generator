@@ -1,0 +1,64 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:ImageToPose.Desktop.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="ImageToPose.Desktop.Views.WelcomeView"
+             x:DataType="vm:WelcomeViewModel">
+    
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="700" Margin="40" Spacing="20">
+            <TextBlock Text="Welcome to Image To Pose Generator" 
+                       FontSize="32" 
+                       FontWeight="Bold" 
+                       TextAlignment="Center"
+                       Margin="0,0,0,20"/>
+            
+            <TextBlock TextWrapping="Wrap" 
+                       FontSize="16"
+                       Margin="0,0,0,10">
+                This application helps you generate precise character poses for Blender from reference images using AI-powered pose analysis.
+            </TextBlock>
+            
+            <TextBlock TextWrapping="Wrap" 
+                       FontSize="16"
+                       Margin="0,0,0,10">
+                <Bold>How it works:</Bold>
+                <LineBreak/>
+                <LineBreak/>
+                1. <Bold>Provide your OpenAI API key</Bold> - The application will validate your access
+                <LineBreak/>
+                2. <Bold>Select a reference image</Bold> and enter a rough pose description
+                <LineBreak/>
+                3. <Bold>AI analyzes the image</Bold> and generates a detailed pose description
+                <LineBreak/>
+                4. <Bold>Review and refine</Bold> the pose description
+                <LineBreak/>
+                5. <Bold>Generate bone rotations</Bold> for MPFB GameEngine rig in Blender
+            </TextBlock>
+            
+            <Border Background="#FFF3CD" 
+                    BorderBrush="#FFC107" 
+                    BorderThickness="1" 
+                    CornerRadius="8" 
+                    Padding="16"
+                    Margin="0,20,0,0">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="?? Important" FontWeight="Bold" FontSize="16"/>
+                    <TextBlock TextWrapping="Wrap">
+                        You will need your own OpenAI API key to use this application. 
+                        The key is stored in memory for this session only and is never saved to disk or transmitted anywhere except to OpenAI's servers.
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+            
+            <Button Content="Get Started" 
+                    Command="{Binding GetStartedCommand}"
+                    HorizontalAlignment="Center"
+                    FontSize="18"
+                    Padding="40,16"
+                    Margin="0,40,0,0"/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
