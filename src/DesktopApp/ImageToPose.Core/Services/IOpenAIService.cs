@@ -13,21 +13,31 @@ public interface IOpenAIService
     Task<ExtendedPose> AnalyzePoseAsync(string imagePath, string roughText, CancellationToken cancellationToken = default);
     Task<PoseRig> GenerateRigAsync(string extendedPoseText, CancellationToken cancellationToken = default);
     Task<bool> ValidateApiKeyAsync(string apiKey, CancellationToken cancellationToken = default);
+
+    // New: Mode & Pricing hooks
+    OperatingMode SelectedMode { get; set; }
+    string? ResolvedModelId { get; }
+    Task<string> ResolveModelAsync(bool requireVision, string? overrideModelId = null, CancellationToken cancellationToken = default);
+    Task<PricingModelRates?> GetResolvedModelRatesAsync(CancellationToken cancellationToken = default);
 }
 
 public class OpenAIService : IOpenAIService
 {
     private readonly ISettingsService _settingsService;
     private readonly IPromptLoader _promptLoader;
+    private readonly IPriceEstimator _priceEstimator;
 
     // Session-scoped cache so we resolve models once
     private string? _chosenModel;
-    private readonly string[] _preferredModels = new[] { "gpt-4.1-mini", "gpt-4.1", "o4-mini" }; // multimodal-capable list
 
-    public OpenAIService(ISettingsService settingsService, IPromptLoader promptLoader)
+    public OperatingMode SelectedMode { get; set; } = OperatingMode.Balanced;
+    public string? ResolvedModelId => _chosenModel;
+
+    public OpenAIService(ISettingsService settingsService, IPromptLoader promptLoader, IPriceEstimator priceEstimator)
     {
         _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
         _promptLoader = promptLoader ?? throw new ArgumentNullException(nameof(promptLoader));
+        _priceEstimator = priceEstimator ?? throw new ArgumentNullException(nameof(priceEstimator));
     }
 
     public async Task<bool> ValidateApiKeyAsync(string apiKey, CancellationToken cancellationToken = default)
@@ -36,32 +46,14 @@ public class OpenAIService : IOpenAIService
 
         try
         {
-            // 1) List models with THIS key (authoritative per-account view)
             var root = new OpenAIClient(apiKey);
             var modelClient = root.GetOpenAIModelClient();
             var modelsPage = await modelClient.GetModelsAsync(cancellationToken);
             var available = modelsPage.Value.Select(m => m.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            // 2) Pick & probe one working chat model
-            string? picked = PickPreferred(available) ?? available.FirstOrDefault(m => m.StartsWith("gpt-4", StringComparison.OrdinalIgnoreCase));
+            // Try resolve according to selected mode
+            var picked = await PickBestModelAsync(root, available, requireVision: true, overrideModelId: null, cancellationToken);
             if (picked is null) return false;
-
-            // tiny probe (auto-retries 5xx; we still wrap a small backoff loop)
-            var ok = await ProbeChatAsync(root, picked, cancellationToken);
-            if (!ok)
-            {
-                foreach (var alt in _preferredModels.Where(m => !m.Equals(picked, StringComparison.OrdinalIgnoreCase)))
-                {
-                    if (available.Contains(alt) && await ProbeChatAsync(root, alt, cancellationToken))
-                    {
-                        picked = alt;
-                        ok = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!ok) return false;
 
             _chosenModel = picked; // cache for the session
             return true;
@@ -70,6 +62,22 @@ public class OpenAIService : IOpenAIService
         {
             return false;
         }
+    }
+
+    public async Task<string> ResolveModelAsync(bool requireVision, string? overrideModelId = null, CancellationToken cancellationToken = default)
+    {
+        var options = _settingsService.GetOpenAIOptions();
+        if (string.IsNullOrWhiteSpace(options.ApiKey))
+            throw new InvalidOperationException("OpenAI API key is not set");
+
+        var root = new OpenAIClient(options.ApiKey);
+        var modelClient = root.GetOpenAIModelClient();
+        var modelsPage = await modelClient.GetModelsAsync(cancellationToken);
+        var available = modelsPage.Value.Select(m => m.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var picked = await PickBestModelAsync(root, available, requireVision, overrideModelId, cancellationToken)
+                    ?? throw new InvalidOperationException("No compatible models available for this API key.");
+        _chosenModel = picked;
+        return picked;
     }
 
     public async Task<ExtendedPose> AnalyzePoseAsync(string imagePath, string roughText, CancellationToken cancellationToken = default)
@@ -86,7 +94,7 @@ public class OpenAIService : IOpenAIService
 
         var client = new OpenAIClient(options.ApiKey);
 
-        // Resolve a model that actually works for this key
+        // Resolve a model that actually works for this key (vision required)
         var model = await EnsureModelAsync(client, requireVision: true, cancellationToken);
 
         // Load prompt #1
@@ -163,6 +171,12 @@ public class OpenAIService : IOpenAIService
         return ParsePoseRig(content);
     }
 
+    public async Task<PricingModelRates?> GetResolvedModelRatesAsync(CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(_chosenModel)) return null;
+        return await _priceEstimator.GetRatesAsync(_chosenModel!, cancellationToken);
+    }
+
     // -------- Helpers --------
 
     private static string DetectImageMime(string path)
@@ -207,8 +221,33 @@ public class OpenAIService : IOpenAIService
             || modelId.StartsWith("o4", StringComparison.OrdinalIgnoreCase);
     }
 
-    private string? PickPreferred(HashSet<string> available)
-        => _preferredModels.FirstOrDefault(m => available.Contains(m));
+    private async Task<string?> PickBestModelAsync(OpenAIClient root, HashSet<string> available, bool requireVision, string? overrideModelId, CancellationToken cancellationToken)
+    {
+        // If user forces a model id, try it first
+        if (!string.IsNullOrWhiteSpace(overrideModelId) && available.Contains(overrideModelId!) && (!requireVision || SupportsVision(overrideModelId!)))
+        {
+            if (await ProbeChatAsync(root, overrideModelId!, cancellationToken))
+                return overrideModelId;
+        }
+
+        var priority = ModeModelMap.GetPriorityList(SelectedMode);
+        foreach (var candidate in priority)
+        {
+            if (!available.Contains(candidate)) continue;
+            if (requireVision && !SupportsVision(candidate)) continue;
+            if (await ProbeChatAsync(root, candidate, cancellationToken))
+                return candidate;
+        }
+
+        // Fallbacks: any gpt-4* then any available
+        string? picked = available.FirstOrDefault(m => m.StartsWith("gpt-4", StringComparison.OrdinalIgnoreCase) && (!requireVision || SupportsVision(m)))
+            ?? available.FirstOrDefault(m => !requireVision || SupportsVision(m))
+            ?? available.FirstOrDefault();
+
+        if (picked is null) return null;
+        if (await ProbeChatAsync(root, picked, cancellationToken)) return picked;
+        return null;
+    }
 
     private async Task<string> EnsureModelAsync(OpenAIClient root, bool requireVision, CancellationToken cancellationToken)
     {
@@ -222,32 +261,8 @@ public class OpenAIService : IOpenAIService
         var modelsPage = await modelClient.GetModelsAsync(cancellationToken);
         var available = modelsPage.Value.Select(m => m.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        string? picked = PickPreferred(available)
-            ?? available.FirstOrDefault(m => m.StartsWith("gpt-4", StringComparison.OrdinalIgnoreCase))
-            ?? available.FirstOrDefault(); // last resort
-
-        if (picked is null)
-            throw new InvalidOperationException("No models are available for this API key.");
-
-        // If vision is required but pick isn't vision-capable, try an alt
-        if (requireVision && !SupportsVision(picked))
-        {
-            picked = _preferredModels.FirstOrDefault(m => available.Contains(m) && SupportsVision(m))
-                     ?? available.FirstOrDefault(m => SupportsVision(m))
-                     ?? picked; // fallback to picked; request will error if truly unsupported
-        }
-
-        // Probe before caching
-        if (!await ProbeChatAsync(root, picked, cancellationToken))
-        {
-            foreach (var alt in _preferredModels.Where(m => available.Contains(m) && (!requireVision || SupportsVision(m))))
-            {
-                if (await ProbeChatAsync(root, alt, cancellationToken))
-                {
-                    picked = alt; break;
-                }
-            }
-        }
+        var picked = await PickBestModelAsync(root, available, requireVision, overrideModelId: null, cancellationToken)
+                    ?? throw new InvalidOperationException("No models are available for this API key.");
 
         _chosenModel = picked;
         return picked;

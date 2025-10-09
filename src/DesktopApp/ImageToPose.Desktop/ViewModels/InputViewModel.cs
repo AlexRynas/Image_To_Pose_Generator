@@ -2,6 +2,7 @@ using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ImageToPose.Core.Services;
+using ImageToPose.Core.Models;
 
 namespace ImageToPose.Desktop.ViewModels;
 
@@ -10,6 +11,8 @@ public partial class InputViewModel : ViewModelBase
     private readonly WizardViewModel _wizard;
     private readonly IOpenAIService _openAIService;
     private readonly IFileService _fileService;
+
+    public ModeSelectionViewModel ModeVM { get; }
 
     [ObservableProperty]
     private string _imagePath = string.Empty;
@@ -31,11 +34,26 @@ public partial class InputViewModel : ViewModelBase
     public InputViewModel(
         WizardViewModel wizard,
         IOpenAIService openAIService,
-        IFileService fileService)
+        IFileService fileService,
+        IPriceEstimator priceEstimator)
     {
         _wizard = wizard;
         _openAIService = openAIService;
         _fileService = fileService;
+
+        ModeVM = new ModeSelectionViewModel(openAIService, priceEstimator);
+        // Initialize mode to Balanced and resolve model/rates
+        _ = ModeVM.ResolveModelAndRatesAsync();
+    }
+
+    partial void OnImagePathChanged(string value)
+    {
+        _ = ModeVM.RecomputeEstimates(ImagePath, RoughPoseText);
+    }
+
+    partial void OnRoughPoseTextChanged(string value)
+    {
+        _ = ModeVM.RecomputeEstimates(ImagePath, RoughPoseText);
     }
 
     [RelayCommand]
