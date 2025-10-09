@@ -14,10 +14,14 @@ namespace ImageToPose.Desktop;
 public partial class App : Application
 {
     public static IServiceProvider? Services { get; private set; }
+    public static IThemeService ThemeService { get; private set; } = default!;
 
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
+        
+        // Initialize theme service before DI
+        ThemeService = new ThemeService(this);
         
         // Configure services
         var services = new ServiceCollection();
@@ -34,6 +38,7 @@ public partial class App : Application
         
         // Desktop services
         services.AddSingleton<IFileService, FileService>();
+        services.AddSingleton<IThemeService>(ThemeService);
         
         // ViewModels
         services.AddTransient<WizardViewModel>();

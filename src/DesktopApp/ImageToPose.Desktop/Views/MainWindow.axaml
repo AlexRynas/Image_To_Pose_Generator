@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:ImageToPose.Desktop.ViewModels"
         xmlns:views="using:ImageToPose.Desktop.Views"
+        xmlns:controls="using:ImageToPose.Desktop.Views.Controls"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="650"
@@ -17,9 +18,9 @@
     </Design.DataContext>
 
     <Grid RowDefinitions="Auto,*">
-        <!-- Header with Back Button -->
+        <!-- Header with Back Button and Theme Toggle -->
         <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" Padding="16">
-            <Grid ColumnDefinitions="Auto,*">
+            <Grid ColumnDefinitions="Auto,*,Auto">
                 <Button Grid.Column="0" 
                         Content="? Back" 
                         Command="{Binding NavigateBackCommand}"
@@ -30,6 +31,8 @@
                            FontSize="20" 
                            FontWeight="SemiBold"
                            VerticalAlignment="Center"/>
+                <controls:ThemeToggle Grid.Column="2" 
+                                     VerticalAlignment="Center"/>
             </Grid>
         </Border>
 
