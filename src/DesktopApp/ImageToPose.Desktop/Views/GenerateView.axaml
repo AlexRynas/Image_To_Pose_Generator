@@ -34,23 +34,23 @@
             </StackPanel>
             
             <!-- Error Message -->
-            <Border Background="#FFEBEE" 
-                    BorderBrush="#F44336" 
+            <Border Background="{DynamicResource Brush.Danger}" 
+                    BorderBrush="{DynamicResource Brush.Border}" 
                     BorderThickness="1" 
                     CornerRadius="8" 
                     Padding="12"
                     IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                 <TextBlock Text="{Binding ErrorMessage}" 
                            TextWrapping="Wrap" 
-                           Foreground="#D32F2F"/>
+                           Foreground="White"/>
             </Border>
             
             <!-- Generated JSON -->
             <StackPanel Spacing="10" IsVisible="{Binding HasGenerated}">
                 <TextBlock Text="Generated Bone Rotations:" FontWeight="SemiBold" FontSize="16"/>
                 
-                <Border Background="#F5F5F5" 
-                        BorderBrush="Gray" 
+                <Border Background="{DynamicResource Brush.Surface}" 
+                        BorderBrush="{DynamicResource Brush.Border}" 
                         BorderThickness="1" 
                         CornerRadius="8" 
                         Padding="16">
@@ -80,16 +80,16 @@
             </StackPanel>
             
             <!-- Blender Workflow Info -->
-            <Border Background="#E8F5E9" 
-                    BorderBrush="#4CAF50" 
+            <Border Background="{DynamicResource Brush.Success}" 
+                    BorderBrush="{DynamicResource Brush.Border}" 
                     BorderThickness="1" 
                     CornerRadius="8" 
                     Padding="16"
                     IsVisible="{Binding HasGenerated}"
                     Margin="0,20,0,0">
                 <StackPanel Spacing="10">
-                    <TextBlock Text="Next Steps: Applying to Blender" FontWeight="Bold" FontSize="16"/>
-                    <TextBlock TextWrapping="Wrap" FontSize="13">
+                    <TextBlock Text="Next Steps: Applying to Blender" FontWeight="Bold" FontSize="16" Foreground="White"/>
+                    <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="White">
                         To apply these rotations to your MPFB GameEngine rig in Blender:
                         <LineBreak/>
                         <LineBreak/>

@@ -29,11 +29,12 @@
                 <TextBlock Text="{Binding ImagePath}" 
                            TextWrapping="Wrap" 
                            FontSize="12" 
-                           Foreground="Gray"
+                           Foreground="{DynamicResource Brush.TextMuted}"
                            IsVisible="{Binding ImagePath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
                 
                 <!-- Image Preview -->
-                <Border BorderBrush="Gray" 
+                <Border BorderBrush="{DynamicResource Brush.Border}" 
+                        Background="{DynamicResource Brush.Surface}"
                         BorderThickness="1" 
                         CornerRadius="8" 
                         MaxWidth="400" 
@@ -48,7 +49,7 @@
             <!-- Pose Description -->
             <StackPanel Spacing="10">
                 <TextBlock Text="Rough Pose Description:" FontWeight="SemiBold" FontSize="16"/>
-                <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="Gray">
+                <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource Brush.TextMuted}">
                     Provide details about the pose - e.g., "Standing with left hand raised, right hand on hip, weight on right leg"
                 </TextBlock>
                 <TextBox Text="{Binding RoughPoseText}" 
@@ -59,15 +60,15 @@
             </StackPanel>
             
             <!-- Error Message -->
-            <Border Background="#FFEBEE" 
-                    BorderBrush="#F44336" 
+            <Border Background="{DynamicResource Brush.Danger}" 
+                    BorderBrush="{DynamicResource Brush.Border}" 
                     BorderThickness="1" 
                     CornerRadius="8" 
                     Padding="12"
                     IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                 <TextBlock Text="{Binding ErrorMessage}" 
                            TextWrapping="Wrap" 
-                           Foreground="#D32F2F"/>
+                           Foreground="White"/>
             </Border>
             
             <!-- Processing Indicator -->

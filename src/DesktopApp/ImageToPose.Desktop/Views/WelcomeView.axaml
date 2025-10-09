@@ -38,14 +38,14 @@
                 5. <Bold>Generate bone rotations</Bold> for MPFB GameEngine rig in Blender
             </TextBlock>
             
-            <Border Background="#FFF3CD" 
-                    BorderBrush="#FFC107" 
+            <Border Background="{DynamicResource Brush.Surface}" 
+                    BorderBrush="{DynamicResource Brush.Accent}" 
                     BorderThickness="1" 
                     CornerRadius="8" 
                     Padding="16"
                     Margin="0,20,0,0">
                 <StackPanel Spacing="8">
-                    <TextBlock Text="?? Important" FontWeight="Bold" FontSize="16"/>
+                    <TextBlock Text="Important" FontWeight="Bold" FontSize="16"/>
                     <TextBlock TextWrapping="Wrap">
                         You will need your own OpenAI API key to use this application. 
                         The key is stored in memory for this session only and is never saved to disk or transmitted anywhere except to OpenAI's servers.

@@ -15,9 +15,9 @@
     </Application.Styles>
 
     <Application.Resources>
-        <ResourceDictionary x:Key="ThemeBucket">
-            <!-- ThemeService will swap this merged include between Light/Dark -->
+        <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <!-- ThemeService will swap this include between Light/Dark -->
                 <ResourceInclude Source="avares://ImageToPose.Desktop/Styles/Themes/DarkTheme.axaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>

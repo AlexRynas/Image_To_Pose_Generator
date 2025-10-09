@@ -19,7 +19,7 @@
 
     <Grid RowDefinitions="Auto,*">
         <!-- Header with Back Button and Theme Toggle -->
-        <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" Padding="16">
+        <Border Grid.Row="0" Background="{DynamicResource Brush.Surface}" Padding="16" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,0,0,1">
             <Grid ColumnDefinitions="Auto,*,Auto">
                 <Button Grid.Column="0" 
                         Content="? Back" 

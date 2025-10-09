@@ -24,7 +24,7 @@
                          Watermark="sk-..." 
                          PasswordChar="•"
                          FontSize="14"/>
-                <TextBlock FontSize="12" Foreground="Gray">
+                <TextBlock FontSize="12" Foreground="{DynamicResource Brush.TextMuted}">
                     Don't have an API key? 
                     <TextBlock.ContextMenu>
                         <ContextMenu>
@@ -39,27 +39,27 @@
             </StackPanel>
             
             <!-- Error Message -->
-            <Border Background="#FFEBEE" 
-                    BorderBrush="#F44336" 
+            <Border Background="{DynamicResource Brush.Danger}"
+                    BorderBrush="{DynamicResource Brush.Border}" 
                     BorderThickness="1" 
                     CornerRadius="8" 
                     Padding="12"
                     IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                 <TextBlock Text="{Binding ErrorMessage}" 
                            TextWrapping="Wrap" 
-                           Foreground="#D32F2F"/>
+                           Foreground="White"/>
             </Border>
             
             <!-- Success Message -->
-            <Border Background="#E8F5E9" 
-                    BorderBrush="#4CAF50" 
+            <Border Background="{DynamicResource Brush.Success}" 
+                    BorderBrush="{DynamicResource Brush.Border}" 
                     BorderThickness="1" 
                     CornerRadius="8" 
                     Padding="12"
                     IsVisible="{Binding IsValid}">
-                <TextBlock Text="? API key validated successfully!" 
+                <TextBlock Text="API key validated successfully!" 
                            TextWrapping="Wrap" 
-                           Foreground="#388E3C"
+                           Foreground="White"
                            FontWeight="SemiBold"/>
             </Border>
             
@@ -77,14 +77,14 @@
                     Padding="30,12"
                     Margin="0,20,0,0"/>
             
-            <Border Background="#E3F2FD" 
-                    BorderBrush="#2196F3" 
+            <Border Background="{DynamicResource Brush.Info}" 
+                    BorderBrush="{DynamicResource Brush.Border}" 
                     BorderThickness="1" 
                     CornerRadius="8" 
                     Padding="16"
                     Margin="0,20,0,0">
                 <StackPanel Spacing="8">
-                    <TextBlock Text="?? Privacy Note" FontWeight="Bold" FontSize="14"/>
+                    <TextBlock Text="Privacy Note" FontWeight="Bold" FontSize="14"/>
                     <TextBlock TextWrapping="Wrap" FontSize="13">
                         Your API key is stored in memory only for this session. It is never saved to disk or transmitted anywhere except to OpenAI's servers for processing your requests.
                     </TextBlock>

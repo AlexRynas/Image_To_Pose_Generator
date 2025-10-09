@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using Avalonia;
 using Avalonia.Controls;
@@ -34,21 +35,28 @@ public sealed class ThemeService : IThemeService
     {
         Current = theme;
 
-        // Swap the ResourceInclude in ThemeBucket's MergedDictionaries
-        if (_app.Resources.TryGetResource("ThemeBucket", null, out var bucket) && bucket is ResourceDictionary dict)
-        {
-            var uri = new Uri(theme == AppTheme.Dark
-                ? "avares://ImageToPose.Desktop/Styles/Themes/DarkTheme.axaml"
-                : "avares://ImageToPose.Desktop/Styles/Themes/LightTheme.axaml");
+        var uri = new Uri(theme == AppTheme.Dark
+            ? "avares://ImageToPose.Desktop/Styles/Themes/DarkTheme.axaml"
+            : "avares://ImageToPose.Desktop/Styles/Themes/LightTheme.axaml");
 
-            if (dict.MergedDictionaries.Count > 0 && dict.MergedDictionaries[0] is ResourceInclude include)
+        // Replace or add ResourceInclude in Application.Resources.MergedDictionaries
+        if (_app.Resources is ResourceDictionary appDict)
+        {
+            // Try find existing include referencing our Themes path
+            var existingInclude = appDict.MergedDictionaries
+                .OfType<ResourceInclude>()
+                .FirstOrDefault(ri => ri.Source != null && ri.Source.OriginalString.Contains("/Styles/Themes/", StringComparison.OrdinalIgnoreCase));
+
+            if (existingInclude is not null)
             {
-                include.Source = uri;
+                existingInclude.Source = uri;
             }
             else
             {
-                dict.MergedDictionaries.Clear();
-                dict.MergedDictionaries.Add(new ResourceInclude(uri));
+                appDict.MergedDictionaries.Add(new ResourceInclude(uri)
+                {
+                    Source = uri
+                });
             }
         }
 

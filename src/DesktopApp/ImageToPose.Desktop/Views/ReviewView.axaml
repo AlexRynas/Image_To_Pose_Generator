@@ -28,13 +28,13 @@
                          FontSize="13"/>
             </StackPanel>
             
-            <Border Background="#E3F2FD" 
-                    BorderBrush="#2196F3" 
+            <Border Background="{DynamicResource Brush.Info}" 
+                    BorderBrush="{DynamicResource Brush.Border}" 
                     BorderThickness="1" 
                     CornerRadius="8" 
                     Padding="16">
                 <StackPanel Spacing="8">
-                    <TextBlock Text="?? Tip" FontWeight="Bold" FontSize="14"/>
+                    <TextBlock Text="Tip" FontWeight="Bold" FontSize="14"/>
                     <TextBlock TextWrapping="Wrap" FontSize="13">
                         Make sure the description is detailed and accurate. Include information about:
                         <LineBreak/>
