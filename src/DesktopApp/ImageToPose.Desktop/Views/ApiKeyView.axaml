@@ -20,9 +20,9 @@
             
             <StackPanel Spacing="8">
                 <TextBlock Text="API Key:" FontWeight="SemiBold"/>
-                <TextBox Text="{Binding ApiKey}" 
+                <TextBox Text="{Binding ApiKey, UpdateSourceTrigger=PropertyChanged}" 
                          Watermark="sk-..." 
-                         PasswordChar="•"
+                         PasswordChar="*"
                          FontSize="14"/>
                 <TextBlock FontSize="12" Foreground="{DynamicResource Brush.TextMuted}">
                     Don't have an API key? 

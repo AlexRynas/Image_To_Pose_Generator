@@ -13,9 +13,11 @@ public partial class ApiKeyViewModel : ViewModelBase
     private readonly IOpenAIService _openAIService;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanValidateAndContinue))]
     private string _apiKey = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanValidateAndContinue))]
     private bool _isValidating;
 
     [ObservableProperty]
