@@ -35,29 +35,27 @@ public sealed class ThemeService : IThemeService
     {
         Current = theme;
 
-        var uri = new Uri(theme == AppTheme.Dark
+        var sourceUri = new Uri(theme == AppTheme.Dark
             ? "avares://ImageToPose.Desktop/Styles/Themes/DarkTheme.axaml"
             : "avares://ImageToPose.Desktop/Styles/Themes/LightTheme.axaml");
 
-        // Replace or add ResourceInclude in Application.Resources.MergedDictionaries
+        // Replace theme ResourceInclude in Application.Resources.MergedDictionaries by removing the old
+        // include and adding a fresh one. This reliably triggers resource change notifications.
         if (_app.Resources is ResourceDictionary appDict)
         {
-            // Try find existing include referencing our Themes path
-            var existingInclude = appDict.MergedDictionaries
+            var includesToRemove = appDict.MergedDictionaries
                 .OfType<ResourceInclude>()
-                .FirstOrDefault(ri => ri.Source != null && ri.Source.OriginalString.Contains("/Styles/Themes/", StringComparison.OrdinalIgnoreCase));
+                .Where(ri => ri.Source != null && ri.Source.OriginalString.Contains("/Styles/Themes/", StringComparison.OrdinalIgnoreCase))
+                .ToList();
 
-            if (existingInclude is not null)
+            foreach (var inc in includesToRemove)
+                appDict.MergedDictionaries.Remove(inc);
+
+            var include = new ResourceInclude(new Uri("avares://ImageToPose.Desktop"))
             {
-                existingInclude.Source = uri;
-            }
-            else
-            {
-                appDict.MergedDictionaries.Add(new ResourceInclude(uri)
-                {
-                    Source = uri
-                });
-            }
+                Source = sourceUri
+            };
+            appDict.MergedDictionaries.Add(include);
         }
 
         // Also set RequestedThemeVariant to aid FluentTheme
