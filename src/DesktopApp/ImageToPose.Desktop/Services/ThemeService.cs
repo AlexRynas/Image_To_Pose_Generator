@@ -34,13 +34,22 @@ public sealed class ThemeService : IThemeService
     {
         Current = theme;
 
-        // Swap the ResourceInclude.Source of ActiveTheme
+        // Swap the ResourceInclude in ThemeBucket's MergedDictionaries
         if (_app.Resources.TryGetResource("ThemeBucket", null, out var bucket) && bucket is ResourceDictionary dict)
         {
-            var include = (ResourceInclude)dict["ActiveTheme"]!;
-            include.Source = new Uri(theme == AppTheme.Dark
+            var uri = new Uri(theme == AppTheme.Dark
                 ? "avares://ImageToPose.Desktop/Styles/Themes/DarkTheme.axaml"
                 : "avares://ImageToPose.Desktop/Styles/Themes/LightTheme.axaml");
+
+            if (dict.MergedDictionaries.Count > 0 && dict.MergedDictionaries[0] is ResourceInclude include)
+            {
+                include.Source = uri;
+            }
+            else
+            {
+                dict.MergedDictionaries.Clear();
+                dict.MergedDictionaries.Add(new ResourceInclude(uri));
+            }
         }
 
         // Also set RequestedThemeVariant to aid FluentTheme
