@@ -64,9 +64,9 @@
             </Border>
             
             <!-- Validating Indicator -->
-            <StackPanel Orientation="Horizontal" Spacing="10" IsVisible="{Binding IsValidating}">
-                <ProgressBar IsIndeterminate="True" Width="200" Height="4"/>
-                <TextBlock Text="Validating API key..." VerticalAlignment="Center"/>
+            <StackPanel Orientation="Vertical" Spacing="10" IsVisible="{Binding IsValidating}" HorizontalAlignment="Stretch">
+                <ProgressBar IsIndeterminate="True" Height="4" HorizontalAlignment="Stretch"/>
+                <TextBlock Text="Validating API key..." HorizontalAlignment="Center" TextAlignment="Center"/>
             </StackPanel>
             
             <Button Content="Validate and Continue" 

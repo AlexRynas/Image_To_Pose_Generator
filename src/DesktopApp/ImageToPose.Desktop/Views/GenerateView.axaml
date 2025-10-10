@@ -28,9 +28,9 @@
                     IsVisible="{Binding !HasGenerated}"/>
             
             <!-- Processing Indicator -->
-            <StackPanel Orientation="Horizontal" Spacing="10" IsVisible="{Binding IsGenerating}">
-                <ProgressBar IsIndeterminate="True" Width="300" Height="4"/>
-                <TextBlock Text="Generating rotations with AI..." VerticalAlignment="Center"/>
+            <StackPanel Orientation="Vertical" Spacing="10" IsVisible="{Binding IsGenerating}" HorizontalAlignment="Stretch">
+                <ProgressBar IsIndeterminate="True" Height="4" HorizontalAlignment="Stretch"/>
+                <TextBlock Text="Generating rotations with AI..." HorizontalAlignment="Center" TextAlignment="Center"/>
             </StackPanel>
             
             <!-- Error Message -->
