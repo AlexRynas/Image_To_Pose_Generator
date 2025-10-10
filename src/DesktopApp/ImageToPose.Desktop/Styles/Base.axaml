@@ -24,11 +24,13 @@
     <Setter Property="CornerRadius" Value="6"/>
   </Style>
 
-  <Style Selector="Button:pointerover /template/ ContentPresenter">
+  <!-- Hover state: Style the Button itself, not just ContentPresenter -->
+  <Style Selector="Button:pointerover">
     <Setter Property="Background" Value="{DynamicResource Brush.PrimaryHover}"/>
   </Style>
 
-  <Style Selector="Button:pressed /template/ ContentPresenter">
+  <!-- Pressed state: Style the Button itself, not just ContentPresenter -->
+  <Style Selector="Button:pressed">
     <Setter Property="Background" Value="{DynamicResource Brush.Primary700}"/>
   </Style>
 
