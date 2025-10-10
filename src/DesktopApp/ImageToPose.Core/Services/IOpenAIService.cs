@@ -148,10 +148,12 @@ public class OpenAIService : IOpenAIService
         var model = await EnsureModelAsync(client, requireVision: false, cancellationToken);
 
         var promptTemplate = await _promptLoader.LoadGenerateRigPromptAsync(cancellationToken);
-        var prompt = promptTemplate.Replace(
-            "POSE_TEXT_START\n(Insert pose paragraph here — anatomical left/right, global stance/lean, head/neck yaw/pitch/tilt, torso orientation/lean/side-bend, shoulders/arms/elbows/forearms/hands, hips/legs/knees/feet, occlusions/uncertainties.)\nPOSE_TEXT_END",
-            $"POSE_TEXT_START\n{extendedPoseText}\nPOSE_TEXT_END"
-        );
+
+        // Replace anything between POSE_TEXT_START and POSE_TEXT_END in a robust way
+        // Handles differing whitespace and line endings in the template
+        var pattern = @"POSE_TEXT_START\s*(?:\r?\n)?[\s\S]*?(?:\r?\n)?POSE_TEXT_END";
+        var replacement = $"POSE_TEXT_START{Environment.NewLine}{extendedPoseText}{Environment.NewLine}POSE_TEXT_END";
+        var prompt = Regex.Replace(promptTemplate, pattern, replacement, RegexOptions.IgnoreCase);
 
         var messages = new List<ChatMessage>
             {

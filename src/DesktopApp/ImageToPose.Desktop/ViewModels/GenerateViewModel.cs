@@ -25,9 +25,12 @@ public partial class GenerateViewModel : ViewModelBase
     private string _generatedJson = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanGeneratePoseRig))]
     private bool _isGenerating;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanCopyToClipboard))]
+    [NotifyPropertyChangedFor(nameof(CanSaveJson))]
     private bool _hasGenerated;
 
     [ObservableProperty]
