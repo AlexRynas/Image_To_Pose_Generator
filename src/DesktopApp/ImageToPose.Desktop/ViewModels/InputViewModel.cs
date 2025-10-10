@@ -21,9 +21,30 @@ public partial class InputViewModel : ViewModelBase
     [ObservableProperty]
     private Bitmap? _imagePreview;
 
+    // === Anchor fields ===
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanProcessImageAndPose))]
-    private string _roughPoseText = string.Empty;
+    private string _leftHand = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanProcessImageAndPose))]
+    private string _rightHand = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanProcessImageAndPose))]
+    private string _leftFoot = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanProcessImageAndPose))]
+    private string _rightFoot = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanProcessImageAndPose))]
+    private string _facing = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanProcessImageAndPose))]
+    private string _notes = string.Empty;
 
     [ObservableProperty]
     private bool _isProcessing;
@@ -48,14 +69,32 @@ public partial class InputViewModel : ViewModelBase
         _ = ModeVM.ResolveModelAndRatesAsync();
     }
 
-    partial void OnImagePathChanged(string value)
+    partial void OnImagePathChanged(string value) => _ = RecomputeEstimates();
+    partial void OnLeftHandChanged(string value) => _ = RecomputeEstimates();
+    partial void OnRightHandChanged(string value) => _ = RecomputeEstimates();
+    partial void OnLeftFootChanged(string value) => _ = RecomputeEstimates();
+    partial void OnRightFootChanged(string value) => _ = RecomputeEstimates();
+    partial void OnFacingChanged(string value) => _ = RecomputeEstimates();
+    partial void OnNotesChanged(string value) => _ = RecomputeEstimates();
+
+    private string BuildUserAnchorsBlock()
     {
-        _ = ModeVM.RecomputeEstimates(ImagePath, RoughPoseText);
+        // Compose block consistent with the analyze prompt
+        var input = new PoseInput
+        {
+            LeftHand = LeftHand,
+            RightHand = RightHand,
+            LeftFoot = LeftFoot,
+            RightFoot = RightFoot,
+            Facing = Facing,
+            Notes = Notes
+        };
+        return input.ToUserAnchorsBlock();
     }
 
-    partial void OnRoughPoseTextChanged(string value)
+    private async Task RecomputeEstimates()
     {
-        _ = ModeVM.RecomputeEstimates(ImagePath, RoughPoseText);
+        await ModeVM.RecomputeEstimates(ImagePath, BuildUserAnchorsBlock());
     }
 
     [RelayCommand]
@@ -65,7 +104,7 @@ public partial class InputViewModel : ViewModelBase
         if (!string.IsNullOrEmpty(path))
         {
             ImagePath = path;
-            
+
             // Load preview
             try
             {
@@ -88,9 +127,9 @@ public partial class InputViewModel : ViewModelBase
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(RoughPoseText))
+        if (!HasAnyAnchors())
         {
-            ErrorMessage = "Please enter a rough pose description";
+            ErrorMessage = "Please fill at least one anchor (e.g., Facing)";
             return;
         }
 
@@ -99,12 +138,23 @@ public partial class InputViewModel : ViewModelBase
 
         try
         {
-            var result = await _openAIService.AnalyzePoseAsync(ImagePath, RoughPoseText);
+            var input = new PoseInput
+            {
+                ImagePath = ImagePath,
+                LeftHand = LeftHand,
+                RightHand = RightHand,
+                LeftFoot = LeftFoot,
+                RightFoot = RightFoot,
+                Facing = Facing,
+                Notes = Notes
+            };
+
+            var result = await _openAIService.AnalyzePoseAsync(input);
             ExtendedPoseDescription = result.Text;
-            
+
             // Pass to review view model
             _wizard.ReviewViewModel.ExtendedPoseText = result.Text;
-            
+
             // Navigate to review step
             _wizard.NavigateToStep(WizardStep.Review);
         }
@@ -118,8 +168,16 @@ public partial class InputViewModel : ViewModelBase
         }
     }
 
-    public bool CanProcessImageAndPose => 
-        !string.IsNullOrWhiteSpace(ImagePath) && 
-        !string.IsNullOrWhiteSpace(RoughPoseText) && 
+    private bool HasAnyAnchors() =>
+        !string.IsNullOrWhiteSpace(LeftHand) ||
+        !string.IsNullOrWhiteSpace(RightHand) ||
+        !string.IsNullOrWhiteSpace(LeftFoot) ||
+        !string.IsNullOrWhiteSpace(RightFoot) ||
+        !string.IsNullOrWhiteSpace(Facing) ||
+        !string.IsNullOrWhiteSpace(Notes);
+
+    public bool CanProcessImageAndPose =>
+        !string.IsNullOrWhiteSpace(ImagePath) &&
+        HasAnyAnchors() &&
         !IsProcessing;
 }

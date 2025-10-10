@@ -10,11 +10,11 @@ namespace ImageToPose.Core.Services;
 /// </summary>
 public interface IOpenAIService
 {
-    Task<ExtendedPose> AnalyzePoseAsync(string imagePath, string roughText, CancellationToken cancellationToken = default);
+    Task<ExtendedPose> AnalyzePoseAsync(PoseInput input, CancellationToken cancellationToken = default);
     Task<PoseRig> GenerateRigAsync(string extendedPoseText, CancellationToken cancellationToken = default);
     Task<bool> ValidateApiKeyAsync(string apiKey, CancellationToken cancellationToken = default);
 
-    // New: Mode & Pricing hooks
+    // Mode & Pricing hooks
     OperatingMode SelectedMode { get; set; }
     string? ResolvedModelId { get; }
     Task<string> ResolveModelAsync(bool requireVision, string? overrideModelId = null, CancellationToken cancellationToken = default);
@@ -80,13 +80,14 @@ public class OpenAIService : IOpenAIService
         return picked;
     }
 
-    public async Task<ExtendedPose> AnalyzePoseAsync(string imagePath, string roughText, CancellationToken cancellationToken = default)
+    public async Task<ExtendedPose> AnalyzePoseAsync(PoseInput input, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(imagePath))
-            throw new ArgumentException("Image path cannot be empty", nameof(imagePath));
+        if (input is null) throw new ArgumentNullException(nameof(input));
+        if (string.IsNullOrWhiteSpace(input.ImagePath))
+            throw new ArgumentException("Image path cannot be empty", nameof(input.ImagePath));
 
-        if (!File.Exists(imagePath))
-            throw new FileNotFoundException("Image file not found", imagePath);
+        if (!File.Exists(input.ImagePath))
+            throw new FileNotFoundException("Image file not found", input.ImagePath);
 
         var options = _settingsService.GetOpenAIOptions();
         if (string.IsNullOrWhiteSpace(options.ApiKey))
@@ -100,23 +101,24 @@ public class OpenAIService : IOpenAIService
         // Load prompt #1
         var promptTemplate = await _promptLoader.LoadAnalyzeImagePromptAsync(cancellationToken);
 
-        // Build the user message (text + image)
+        // Build the user message (text + image) using USER-SET ANCHORS format
+        var anchorsBlock = input.ToUserAnchorsBlock();
         var userMessageText =
-            $"USER-SET ANCHORS\n{roughText}\n\n" +
+            $"USER-SET ANCHORS\n{anchorsBlock}\n\n" +
             "Analyze the attached image and produce the extended pose description.";
 
         // Read the image and attach as an image content part (binary)
-        byte[] bytes = await File.ReadAllBytesAsync(imagePath, cancellationToken);
-        var imagePart = ChatMessageContentPart.CreateImagePart(BinaryData.FromBytes(bytes), DetectImageMime(imagePath));
+        byte[] bytes = await File.ReadAllBytesAsync(input.ImagePath, cancellationToken);
+        var imagePart = ChatMessageContentPart.CreateImagePart(BinaryData.FromBytes(bytes), DetectImageMime(input.ImagePath));
 
         var messages = new List<ChatMessage>
-        {
-            new SystemChatMessage(promptTemplate),
-            new UserChatMessage(
-                ChatMessageContentPart.CreateTextPart(userMessageText),
-                imagePart
-            )
-        };
+            {
+                new SystemChatMessage(promptTemplate),
+                new UserChatMessage(
+                    ChatMessageContentPart.CreateTextPart(userMessageText),
+                    imagePart
+                )
+            };
 
         var chat = client.GetChatClient(model);
         var chatOptions = new ChatCompletionOptions
@@ -152,9 +154,9 @@ public class OpenAIService : IOpenAIService
         );
 
         var messages = new List<ChatMessage>
-        {
-            new SystemChatMessage(prompt)
-        };
+            {
+                new SystemChatMessage(prompt)
+            };
 
         var chat = client.GetChatClient(model);
         var chatOptions = new ChatCompletionOptions
