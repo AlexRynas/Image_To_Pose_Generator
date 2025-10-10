@@ -8,6 +8,7 @@ public partial class ReviewViewModel : ViewModelBase
     private readonly WizardViewModel _wizard;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanContinue))]
     private string _extendedPoseText = string.Empty;
 
     public ReviewViewModel(WizardViewModel wizard)

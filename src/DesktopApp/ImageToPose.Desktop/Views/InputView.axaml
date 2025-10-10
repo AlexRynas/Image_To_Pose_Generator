@@ -29,7 +29,6 @@
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <Button Content="OpenAI Pricing" Command="{Binding ModeVM.RefreshPricingCommand}" HorizontalAlignment="Left"/>
-                            <TextBlock Text="⚠ Update pricing" Foreground="OrangeRed" FontSize="12"/>
                         </StackPanel>
                     </StackPanel>
                 </Border>

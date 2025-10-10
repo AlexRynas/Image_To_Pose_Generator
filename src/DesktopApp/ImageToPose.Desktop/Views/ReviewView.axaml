@@ -38,17 +38,17 @@
                     <TextBlock TextWrapping="Wrap" FontSize="13">
                         Make sure the description is detailed and accurate. Include information about:
                         <LineBreak/>
-                        • Weight distribution and stance
+                        - Weight distribution and stance
                         <LineBreak/>
-                        • Head and neck positioning (yaw, pitch, tilt)
+                        - Head and neck positioning (yaw, pitch, tilt)
                         <LineBreak/>
-                        • Torso orientation and lean
+                        - Torso orientation and lean
                         <LineBreak/>
-                        • Arm and hand positions
+                        - Arm and hand positions
                         <LineBreak/>
-                        • Leg and foot angles
+                        - Leg and foot angles
                         <LineBreak/>
-                        • Any occluded or uncertain parts
+                        - Any occluded or uncertain parts
                     </TextBlock>
                 </StackPanel>
             </Border>

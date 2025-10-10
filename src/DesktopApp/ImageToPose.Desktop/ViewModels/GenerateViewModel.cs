@@ -16,9 +16,12 @@ public partial class GenerateViewModel : ViewModelBase
     private readonly IFileService _fileService;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanGeneratePoseRig))]
     private string _extendedPoseDescription = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanCopyToClipboard))]
+    [NotifyPropertyChangedFor(nameof(CanSaveJson))]
     private string _generatedJson = string.Empty;
 
     [ObservableProperty]

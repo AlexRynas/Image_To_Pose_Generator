@@ -15,12 +15,14 @@ public partial class InputViewModel : ViewModelBase
     public ModeSelectionViewModel ModeVM { get; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanProcessImageAndPose))]
     private string _imagePath = string.Empty;
 
     [ObservableProperty]
     private Bitmap? _imagePreview;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanProcessImageAndPose))]
     private string _roughPoseText = string.Empty;
 
     [ObservableProperty]
