@@ -78,13 +78,13 @@
 
             <!-- Left/main content -->
             <StackPanel MaxWidth="700" Margin="20" Spacing="20">
-                <TextBlock Text="Input Image and Pose Description" 
+                <TextBlock Text="Input Image and Pose Anchors" 
                            FontSize="28" 
                            FontWeight="Bold" 
                            Margin="0,0,0,10"/>
                 
                 <TextBlock TextWrapping="Wrap" FontSize="14">
-                    Select a reference image and provide a rough description of the pose. The AI will analyze both to create a detailed pose description.
+                    Select a reference image and provide all required pose anchors. Notes are optional.
                 </TextBlock>
                 
                 <!-- Image Selection -->
@@ -115,17 +115,67 @@
                     </Border>
                 </StackPanel>
                 
-                <!-- Pose Description -->
+                <!-- Pose Anchors -->
                 <StackPanel Spacing="10">
-                    <TextBlock Text="Rough Pose Description:" FontWeight="SemiBold" FontSize="16"/>
+                    <TextBlock Text="Pose Anchors:" FontWeight="SemiBold" FontSize="16"/>
                     <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource Brush.TextMuted}">
-                        Provide details about the pose - e.g., "Standing with left hand raised, right hand on hip, weight on right leg"
+                        Fields marked with * are required.
                     </TextBlock>
-                    <TextBox Text="{Binding RoughPoseText}" 
-                             AcceptsReturn="True" 
-                             TextWrapping="Wrap" 
-                             MinHeight="150"
-                             Watermark="Enter pose description here..."/>
+
+                    <!-- Facing -->
+                    <StackPanel Spacing="4">
+                        <TextBlock>
+                            <Run Text="Facing"/>
+                            <Run Text=" *" Foreground="{DynamicResource Brush.Danger}"/>
+                        </TextBlock>
+                        <TextBox Text="{Binding Facing}" Watermark="e.g., facing camera, 45° left, profile"/>
+                    </StackPanel>
+
+                    <!-- Hands -->
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12" RowDefinitions="Auto" RowSpacing="6">
+                        <StackPanel Grid.Column="0" Spacing="4">
+                            <TextBlock>
+                                <Run Text="Left Hand"/>
+                                <Run Text=" *" Foreground="{DynamicResource Brush.Danger}"/>
+                            </TextBlock>
+                            <TextBox Text="{Binding LeftHand}" Watermark="e.g., raised, open palm, on hip"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="4">
+                            <TextBlock>
+                                <Run Text="Right Hand"/>
+                                <Run Text=" *" Foreground="{DynamicResource Brush.Danger}"/>
+                            </TextBlock>
+                            <TextBox Text="{Binding RightHand}" Watermark="e.g., relaxed, holding object, on hip"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Feet -->
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12" RowDefinitions="Auto" RowSpacing="6">
+                        <StackPanel Grid.Column="0" Spacing="4">
+                            <TextBlock>
+                                <Run Text="Left Foot"/>
+                                <Run Text=" *" Foreground="{DynamicResource Brush.Danger}"/>
+                            </TextBlock>
+                            <TextBox Text="{Binding LeftFoot}" Watermark="e.g., weight bearing, forward, behind"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="4">
+                            <TextBlock>
+                                <Run Text="Right Foot"/>
+                                <Run Text=" *" Foreground="{DynamicResource Brush.Danger}"/>
+                            </TextBlock>
+                            <TextBox Text="{Binding RightFoot}" Watermark="e.g., tiptoe, forward, turned out"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Notes -->
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Notes (optional)"/>
+                        <TextBox Text="{Binding Notes}" 
+                                 AcceptsReturn="True" 
+                                 TextWrapping="Wrap" 
+                                 MinHeight="120"
+                                 Watermark="Other pose details, scene hints, or constraints..."/>
+                    </StackPanel>
                 </StackPanel>
                 
                 <!-- Error Message -->

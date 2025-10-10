@@ -127,9 +127,9 @@ public partial class InputViewModel : ViewModelBase
             return;
         }
 
-        if (!HasAnyAnchors())
+        if (!HasRequiredAnchors())
         {
-            ErrorMessage = "Please fill at least one anchor (e.g., Facing)";
+            ErrorMessage = "Please fill all required fields: Facing, Left/Right Hand, Left/Right Foot";
             return;
         }
 
@@ -168,16 +168,15 @@ public partial class InputViewModel : ViewModelBase
         }
     }
 
-    private bool HasAnyAnchors() =>
-        !string.IsNullOrWhiteSpace(LeftHand) ||
-        !string.IsNullOrWhiteSpace(RightHand) ||
-        !string.IsNullOrWhiteSpace(LeftFoot) ||
-        !string.IsNullOrWhiteSpace(RightFoot) ||
-        !string.IsNullOrWhiteSpace(Facing) ||
-        !string.IsNullOrWhiteSpace(Notes);
+    private bool HasRequiredAnchors() =>
+        !string.IsNullOrWhiteSpace(LeftHand) &&
+        !string.IsNullOrWhiteSpace(RightHand) &&
+        !string.IsNullOrWhiteSpace(LeftFoot) &&
+        !string.IsNullOrWhiteSpace(RightFoot) &&
+        !string.IsNullOrWhiteSpace(Facing);
 
     public bool CanProcessImageAndPose =>
         !string.IsNullOrWhiteSpace(ImagePath) &&
-        HasAnyAnchors() &&
+        HasRequiredAnchors() &&
         !IsProcessing;
 }
