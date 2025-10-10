@@ -5,12 +5,12 @@
         xmlns:controls="using:ImageToPose.Desktop.Views.Controls"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="650"
+        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
         x:Class="ImageToPose.Desktop.Views.MainWindow"
         x:DataType="vm:WizardViewModel"
         Icon="/Assets/avalonia-logo.ico"
         Title="Image To Pose Generator"
-        Width="900" Height="650"
+        Width="1000" Height="700"
         WindowStartupLocation="CenterScreen">
 
     <Design.DataContext>
