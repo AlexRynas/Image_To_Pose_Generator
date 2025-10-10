@@ -1,6 +1,7 @@
 using System.Text.Json;
 using ImageToPose.Core.Models;
 using SharpToken;
+using SixLabors.ImageSharp;
 
 namespace ImageToPose.Core.Services;
 
@@ -129,18 +130,17 @@ public class JsonPricingEstimator : IPriceEstimator
 
     private async Task<(int tiles, int imageTokens)> EstimateImageTokensAsync(string imagePath, CancellationToken ct)
     {
-        // Read only the header to get dimensions; Avalonia not referenced here, use System.Drawing for Windows/portable? Prefer ImageSharp-less approach:
-        // Use BitmapDecoder from System.Drawing is not available cross-platform by default in .NET 9 without native deps. Instead, try metadata via ImageSharp if later added.
-        // For now, try using System.Drawing on Windows, fallback to 1 tile.
+        // Use ImageSharp to read dimensions (cross-platform)
         int width = 0, height = 0;
         try
         {
-            using var img = System.Drawing.Image.FromFile(imagePath);
-            width = img.Width; height = img.Height;
+            using var img = await Image.LoadAsync(imagePath, ct);
+            width = img.Width;
+            height = img.Height;
         }
         catch
         {
-            // ignore; assume one tile
+            // fallback: assume one tile
         }
 
         int tilesX = (int)Math.Ceiling((width > 0 ? width : 512) / 512.0);

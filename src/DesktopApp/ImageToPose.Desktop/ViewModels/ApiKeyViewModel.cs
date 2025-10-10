@@ -60,6 +60,9 @@ public partial class ApiKeyViewModel : ViewModelBase
                 _settingsService.SetOpenAIOptions(new OpenAIOptions { ApiKey = ApiKey });
                 IsValid = true;
                 
+                // Trigger model resolution for the InputViewModel's ModeVM
+                await _wizard.InputViewModel.ModeVM.ResolveModelAndRatesAsync();
+                
                 // Navigate to next step
                 _wizard.NavigateToStep(WizardStep.Input);
             }

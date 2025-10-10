@@ -9,6 +9,7 @@ public partial class WizardViewModel : ViewModelBase
     private readonly ISettingsService _settingsService;
     private readonly IOpenAIService _openAIService;
     private readonly IFileService _fileService;
+    private readonly IPriceEstimator _priceEstimator;
 
     [ObservableProperty]
     private WizardStep _currentStep = WizardStep.Welcome;
@@ -25,16 +26,18 @@ public partial class WizardViewModel : ViewModelBase
     public WizardViewModel(
         ISettingsService settingsService,
         IOpenAIService openAIService,
-        IFileService fileService)
+        IFileService fileService,
+        IPriceEstimator priceEstimator)
     {
         _settingsService = settingsService;
         _openAIService = openAIService;
         _fileService = fileService;
+        _priceEstimator = priceEstimator;
 
         // Initialize step view models
         WelcomeViewModel = new WelcomeViewModel(this);
         ApiKeyViewModel = new ApiKeyViewModel(this, settingsService, openAIService);
-        InputViewModel = new InputViewModel(this, openAIService, fileService);
+        InputViewModel = new InputViewModel(this, openAIService, fileService, priceEstimator);
         ReviewViewModel = new ReviewViewModel(this);
         GenerateViewModel = new GenerateViewModel(this, openAIService, fileService);
 

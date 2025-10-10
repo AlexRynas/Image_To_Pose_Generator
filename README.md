@@ -42,6 +42,82 @@ The workflow combines computer vision analysis with biomechanical understanding 
 - **OpenAI API key** (required - you provide your own)
 - Internet connection for API calls
 
+## Model Modes & Cost Estimates
+
+The desktop application offers **three operating modes** that let you balance quality vs. cost:
+
+### Operating Modes
+
+#### 1. **Budget** - "Fast & cheapest; ok for simple photos."
+- **Preferred Model**: `gpt-4.1-nano` (fallback: `gpt-4.1-mini`)
+- **Best For**: Simple, straightforward poses where speed and cost matter most
+- **Expected Output**: ~300 tokens per step
+- **Trade-offs**: May miss subtle pose details or nuances
+
+#### 2. **Balanced** (Default) - "Good quality for most cases."
+- **Preferred Model**: `gpt-4.1-mini` (fallbacks: `o4-mini`, `gpt-4.1`)
+- **Best For**: Most everyday use cases - reliable quality at reasonable cost
+- **Expected Output**: ~600 tokens per step
+- **Trade-offs**: Good balance of accuracy and affordability
+
+#### 3. **Quality** - "Best quality at a sensible price."
+- **Preferred Model**: `gpt-4.1` (fallback: `o4-mini`)
+- **Best For**: Complex poses, challenging angles, or maximum accuracy
+- **Expected Output**: ~800 tokens per step
+- **Trade-offs**: Higher cost, but best results
+
+### Cost Estimation
+
+The app shows **real-time cost estimates** before you make API calls:
+
+- **Step 1 (Vision)**: Image analysis + rough pose → extended description
+  - Displays: Input tokens (image + text), assumed output tokens, ≈ USD cost
+- **Step 2 (Text)**: Extended description → bone rotations JSON
+  - Displays: Input tokens (text only), assumed output tokens, ≈ USD cost
+
+**Important Notes**:
+- Estimates use token counts from **SharpToken** (tiktoken for .NET)
+- Image tokens calculated using OpenAI's tile-based formula: 512×512 tiles, 70 base tokens + 140 per tile
+- Pricing rates stored in `config/pricing.json` (auto-generated on first run)
+- **Always verify** pricing at [OpenAI's Pricing Page](https://openai.com/api/pricing) - rates can change!
+
+### Updating Pricing Rates
+
+The app generates a default `config/pricing.json` with approximate rates:
+
+```json
+{
+  "gpt-4.1-nano": { "input_per_million": 0.10, "output_per_million": 0.40 },
+  "gpt-4.1-mini": { "input_per_million": 0.40, "output_per_million": 1.60 },
+  "gpt-4.1":      { "input_per_million": 2.50, "output_per_million": 10.00 },
+  "o4-mini":      { "input_per_million": 3.00, "output_per_million": 12.00 }
+}
+```
+
+**To update rates**:
+1. Click "OpenAI Pricing" button in the app (opens browser)
+2. Check current rates for your desired models
+3. Edit `config/pricing.json` next to the executable
+4. Restart the app or recompute estimates
+
+### Model Selection & Fallbacks
+
+After you validate your API key, the app:
+1. Lists available models using `/v1/models` API
+2. Picks the **first available model** from your mode's priority list
+3. **Probes** the model with a test request to ensure it works
+4. Falls back to the next candidate if needed
+5. Displays the **resolved model** (e.g., "Using: gpt-4.1-mini")
+
+If your API key doesn't have access to the preferred model, you'll see:
+- **"Switched to: [model] (closest available)"** with a tooltip explaining the fallback
+
+### Requirements
+
+- **Windows 10/11** (64-bit)
+- **OpenAI API key** (required - you provide your own)
+- Internet connection for API calls
+
 ### Building from Source
 
 ```bash

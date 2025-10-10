@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:ImageToPose.Desktop.ViewModels"
+             xmlns:models="using:ImageToPose.Core.Models"
              mc:Ignorable="d" d:DesignWidth="1024" d:DesignHeight="700"
              x:Class="ImageToPose.Desktop.Views.InputView"
              x:DataType="vm:InputViewModel">
@@ -14,36 +15,64 @@
                 <Border BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="6" Padding="10">
                     <StackPanel Spacing="8">
                         <TextBlock Text="Operating Mode" FontWeight="SemiBold"/>
-                        <ComboBox SelectedItem="{Binding ModeVM.Mode}" Items="{x:Static vm:OperatingMode.GetValues}"/>
-                        <TextBlock Text="{Binding ModeVM.ModeDescription}" FontSize="12" Foreground="{DynamicResource Brush.TextMuted}"/>
+                        <ComboBox SelectedItem="{Binding ModeVM.Mode}">
+                            <ComboBox.Items>
+                                <models:OperatingMode>Budget</models:OperatingMode>
+                                <models:OperatingMode>Balanced</models:OperatingMode>
+                                <models:OperatingMode>Quality</models:OperatingMode>
+                            </ComboBox.Items>
+                        </ComboBox>
+                        <TextBlock Text="{Binding ModeVM.ModeDescription}" FontSize="12" Foreground="{DynamicResource Brush.TextMuted}" TextWrapping="Wrap"/>
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <TextBlock Text="Using:"/>
                             <TextBlock Text="{Binding ModeVM.ResolvedModelId}" FontWeight="SemiBold"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <Button Content="OpenAI Pricing" Command="{Binding ModeVM.RefreshPricingCommand}" HorizontalAlignment="Left"/>
-                            <TextBlock Text="? Update pricing" Foreground="OrangeRed" FontSize="12"/>
+                            <TextBlock Text="⚠ Update pricing" Foreground="OrangeRed" FontSize="12"/>
                         </StackPanel>
                     </StackPanel>
                 </Border>
 
                 <Border BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="6" Padding="10">
                     <StackPanel Spacing="6">
-                        <TextBlock Text="Estimates (? tokens � USD)" FontWeight="SemiBold"/>
+                        <TextBlock Text="Estimates (≈ tokens → USD)" FontWeight="SemiBold"/>
                         <StackPanel Spacing="2">
                             <TextBlock Text="Step 1 (Vision)" FontWeight="SemiBold"/>
-                            <TextBlock Text="Input: {Binding ModeVM.VisionEstimate.InputTokens} tokens" FontSize="12"/>
-                            <TextBlock Text="Output: {Binding ModeVM.VisionEstimate.OutputTokens} tokens" FontSize="12"/>
-                            <TextBlock Text="? ${Binding ModeVM.VisionEstimate.TotalUsd}" FontSize="12"/>
+                            <TextBlock FontSize="12">
+                                <Run Text="Input: "/>
+                                <Run Text="{Binding ModeVM.VisionEstimate.InputTokens}"/>
+                                <Run Text=" tokens"/>
+                            </TextBlock>
+                            <TextBlock FontSize="12">
+                                <Run Text="Output: "/>
+                                <Run Text="{Binding ModeVM.VisionEstimate.OutputTokens}"/>
+                                <Run Text=" tokens"/>
+                            </TextBlock>
+                            <TextBlock FontSize="12">
+                                <Run Text="≈ $"/>
+                                <Run Text="{Binding ModeVM.VisionEstimate.TotalUsd, StringFormat={}{0:F6}}"/>
+                            </TextBlock>
                         </StackPanel>
                         <Separator/>
                         <StackPanel Spacing="2">
                             <TextBlock Text="Step 2 (Text)" FontWeight="SemiBold"/>
-                            <TextBlock Text="Input: {Binding ModeVM.TextEstimate.InputTokens} tokens" FontSize="12"/>
-                            <TextBlock Text="Output: {Binding ModeVM.TextEstimate.OutputTokens} tokens" FontSize="12"/>
-                            <TextBlock Text="? ${Binding ModeVM.TextEstimate.TotalUsd}" FontSize="12"/>
+                            <TextBlock FontSize="12">
+                                <Run Text="Input: "/>
+                                <Run Text="{Binding ModeVM.TextEstimate.InputTokens}"/>
+                                <Run Text=" tokens"/>
+                            </TextBlock>
+                            <TextBlock FontSize="12">
+                                <Run Text="Output: "/>
+                                <Run Text="{Binding ModeVM.TextEstimate.OutputTokens}"/>
+                                <Run Text=" tokens"/>
+                            </TextBlock>
+                            <TextBlock FontSize="12">
+                                <Run Text="≈ $"/>
+                                <Run Text="{Binding ModeVM.TextEstimate.TotalUsd, StringFormat={}{0:F6}}"/>
+                            </TextBlock>
                         </StackPanel>
-                        <TextBlock Text="Estimates only; see OpenAI billing for exacts." FontSize="11" Foreground="{DynamicResource Brush.TextMuted}"/>
+                        <TextBlock Text="Estimates only; see OpenAI billing for exacts." FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>
             </StackPanel>

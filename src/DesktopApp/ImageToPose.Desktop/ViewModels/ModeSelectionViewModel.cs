@@ -36,17 +36,15 @@ public partial class ModeSelectionViewModel : ViewModelBase
         _openAIService.SelectedMode = _mode;
     }
 
-    [RelayCommand]
-    private async Task SetMode(OperatingMode mode)
+    partial void OnModeChanged(OperatingMode value)
     {
-        Mode = mode;
-        _openAIService.SelectedMode = mode;
-        ModeDescription = ModeModelMap.GetModeDescription(mode);
-        await ResolveModelAndRatesAsync();
+        _openAIService.SelectedMode = value;
+        ModeDescription = ModeModelMap.GetModeDescription(value);
+        _ = ResolveModelAndRatesAsync();
     }
 
     [RelayCommand]
-    private async Task RefreshPricing()
+    private void RefreshPricing()
     {
         try
         {
@@ -57,10 +55,9 @@ public partial class ModeSelectionViewModel : ViewModelBase
             });
         }
         catch { }
-        await RecomputeEstimates();
+        PricingNeedsUpdate = false; // Mark as updated after user visits page
     }
 
-    [RelayCommand]
     public async Task RecomputeEstimates(string? imagePath = null, string? roughText = null)
     {
         // Determine assumed output tokens by mode
