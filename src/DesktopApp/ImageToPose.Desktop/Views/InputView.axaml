@@ -30,6 +30,16 @@
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <Button Content="OpenAI Pricing" Command="{Binding ModeVM.RefreshPricingCommand}" HorizontalAlignment="Left"/>
                         </StackPanel>
+
+                        <!-- Error banner for mode/model pricing errors -->
+                        <Border Background="{DynamicResource Brush.Danger}"
+                                BorderBrush="{DynamicResource Brush.Border}"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Padding="8"
+                                IsVisible="{Binding ModeVM.ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                            <TextBlock Text="{Binding ModeVM.ErrorMessage}" Foreground="White" TextWrapping="Wrap" FontSize="12"/>
+                        </Border>
                     </StackPanel>
                 </Border>
 

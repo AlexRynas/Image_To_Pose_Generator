@@ -10,6 +10,7 @@ public partial class WizardViewModel : ViewModelBase
     private readonly IOpenAIService _openAIService;
     private readonly IFileService _fileService;
     private readonly IPriceEstimator _priceEstimator;
+    private readonly IOpenAIErrorHandler _errorHandler;
 
     [ObservableProperty]
     private WizardStep _currentStep = WizardStep.Welcome;
@@ -27,19 +28,21 @@ public partial class WizardViewModel : ViewModelBase
         ISettingsService settingsService,
         IOpenAIService openAIService,
         IFileService fileService,
-        IPriceEstimator priceEstimator)
+        IPriceEstimator priceEstimator,
+        IOpenAIErrorHandler errorHandler)
     {
         _settingsService = settingsService;
         _openAIService = openAIService;
         _fileService = fileService;
         _priceEstimator = priceEstimator;
+        _errorHandler = errorHandler;
 
         // Initialize step view models
         WelcomeViewModel = new WelcomeViewModel(this);
-        ApiKeyViewModel = new ApiKeyViewModel(this, settingsService, openAIService);
-        InputViewModel = new InputViewModel(this, openAIService, fileService, priceEstimator);
+        ApiKeyViewModel = new ApiKeyViewModel(this, settingsService, openAIService, errorHandler);
+        InputViewModel = new InputViewModel(this, openAIService, fileService, priceEstimator, errorHandler);
         ReviewViewModel = new ReviewViewModel(this);
-        GenerateViewModel = new GenerateViewModel(this, openAIService, fileService);
+        GenerateViewModel = new GenerateViewModel(this, openAIService, fileService, errorHandler);
 
         // Start with welcome
         NavigateToStep(WizardStep.Welcome);

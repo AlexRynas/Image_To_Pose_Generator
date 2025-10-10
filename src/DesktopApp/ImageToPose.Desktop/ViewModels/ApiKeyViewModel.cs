@@ -11,6 +11,7 @@ public partial class ApiKeyViewModel : ViewModelBase
     private readonly WizardViewModel _wizard;
     private readonly ISettingsService _settingsService;
     private readonly IOpenAIService _openAIService;
+    private readonly IOpenAIErrorHandler _errorHandler;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanValidateAndContinue))]
@@ -29,11 +30,13 @@ public partial class ApiKeyViewModel : ViewModelBase
     public ApiKeyViewModel(
         WizardViewModel wizard,
         ISettingsService settingsService,
-        IOpenAIService openAIService)
+        IOpenAIService openAIService,
+        IOpenAIErrorHandler errorHandler)
     {
         _wizard = wizard;
         _settingsService = settingsService;
         _openAIService = openAIService;
+        _errorHandler = errorHandler;
     }
 
     [RelayCommand]
@@ -74,7 +77,8 @@ public partial class ApiKeyViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Error validating API key: {ex.Message}";
+            var info = _errorHandler.Translate(ex);
+            ErrorMessage = info.Message;
             IsValid = false;
         }
         finally

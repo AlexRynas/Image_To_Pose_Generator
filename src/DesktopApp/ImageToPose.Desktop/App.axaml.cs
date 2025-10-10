@@ -36,6 +36,7 @@ public partial class App : Application
         services.AddSingleton<IPromptLoader, PromptLoader>();
         services.AddSingleton<IPriceEstimator, JsonPricingEstimator>();
         services.AddSingleton<IOpenAIService, OpenAIService>();
+        services.AddSingleton<IOpenAIErrorHandler, OpenAIErrorHandler>();
         
         // Desktop services
         services.AddSingleton<IFileService, FileService>();

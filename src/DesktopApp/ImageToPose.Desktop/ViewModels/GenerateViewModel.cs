@@ -14,6 +14,7 @@ public partial class GenerateViewModel : ViewModelBase
     private readonly WizardViewModel _wizard;
     private readonly IOpenAIService _openAIService;
     private readonly IFileService _fileService;
+    private readonly IOpenAIErrorHandler _errorHandler;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanGeneratePoseRig))]
@@ -39,11 +40,13 @@ public partial class GenerateViewModel : ViewModelBase
     public GenerateViewModel(
         WizardViewModel wizard,
         IOpenAIService openAIService,
-        IFileService fileService)
+        IFileService fileService,
+        IOpenAIErrorHandler errorHandler)
     {
         _wizard = wizard;
         _openAIService = openAIService;
         _fileService = fileService;
+        _errorHandler = errorHandler;
     }
 
     [RelayCommand]
@@ -77,7 +80,8 @@ public partial class GenerateViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Error generating pose rig: {ex.Message}";
+            var info = _errorHandler.Translate(ex);
+            ErrorMessage = info.Message;
         }
         finally
         {

@@ -11,6 +11,7 @@ public partial class InputViewModel : ViewModelBase
     private readonly WizardViewModel _wizard;
     private readonly IOpenAIService _openAIService;
     private readonly IFileService _fileService;
+    private readonly IOpenAIErrorHandler _errorHandler;
 
     public ModeSelectionViewModel ModeVM { get; }
 
@@ -58,13 +59,15 @@ public partial class InputViewModel : ViewModelBase
         WizardViewModel wizard,
         IOpenAIService openAIService,
         IFileService fileService,
-        IPriceEstimator priceEstimator)
+        IPriceEstimator priceEstimator,
+        IOpenAIErrorHandler errorHandler)
     {
         _wizard = wizard;
         _openAIService = openAIService;
         _fileService = fileService;
+        _errorHandler = errorHandler;
 
-        ModeVM = new ModeSelectionViewModel(openAIService, priceEstimator);
+        ModeVM = new ModeSelectionViewModel(openAIService, priceEstimator, errorHandler);
         // Initialize mode to Balanced and resolve model/rates
         _ = ModeVM.ResolveModelAndRatesAsync();
     }
@@ -160,7 +163,8 @@ public partial class InputViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Error processing image: {ex.Message}";
+            var info = _errorHandler.Translate(ex);
+            ErrorMessage = info.Message;
         }
         finally
         {
