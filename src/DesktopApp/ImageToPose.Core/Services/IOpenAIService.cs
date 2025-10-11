@@ -55,10 +55,16 @@ public class OpenAIService : IOpenAIService
 
             // Try resolve according to selected mode
             var picked = await PickBestModelAsync(root, available, overrideModelId: null, cancellationToken);
-            if (picked is null) return false;
-
-            _chosenModel = picked; // cache for the session
-            return true;
+            
+            // If no model is available for the current mode, still validate key but don't cache a model
+            // This allows the key validation to succeed even if mode-specific models aren't available
+            if (picked is not null)
+            {
+                _chosenModel = picked; // cache for the session
+            }
+            
+            // Key is valid if we can list models, even if none match the current mode
+            return available.Count > 0;
         }
         catch
         {
@@ -72,12 +78,39 @@ public class OpenAIService : IOpenAIService
         if (string.IsNullOrWhiteSpace(options.ApiKey))
             throw new InvalidOperationException("OpenAI API key is not set");
 
+        // Check if cached model is still valid for the current mode
+        if (!string.IsNullOrWhiteSpace(_chosenModel) && string.IsNullOrWhiteSpace(overrideModelId))
+        {
+            var priority = ModeModelMap.GetPriorityList(SelectedMode);
+            if (OpenAIModelExtensions.TryParse(_chosenModel, out var cachedModel) 
+                && priority.Contains(cachedModel))
+            {
+                // Cached model is appropriate for current mode, reuse it
+                return _chosenModel!;
+            }
+            // Cached model is not in current mode's priority list, invalidate cache
+            _chosenModel = null;
+        }
+
         var root = new OpenAIClient(options.ApiKey);
         var modelClient = root.GetOpenAIModelClient();
         var modelsPage = await modelClient.GetModelsAsync(cancellationToken);
         var available = modelsPage.Value.Select(m => m.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var picked = await PickBestModelAsync(root, available, overrideModelId, cancellationToken)
-                        ?? throw new InvalidOperationException("No compatible models available for this API key.");
+        var picked = await PickBestModelAsync(root, available, overrideModelId, cancellationToken);
+        
+        if (picked is null)
+        {
+            // Build helpful error message based on selected mode
+            var priority = ModeModelMap.GetPriorityList(SelectedMode);
+            var requiredModels = string.Join(" or ", priority.Select(m => m.GetModelId()));
+            var modeName = SelectedMode.ToString();
+            
+            throw new InvalidOperationException(
+                $"No compatible models available for {modeName} mode. " +
+                $"Your API key needs access to: {requiredModels}. " +
+                $"Please check your OpenAI account or select a different mode.");
+        }
+        
         _chosenModel = picked;
         return picked;
     }
@@ -237,16 +270,28 @@ public class OpenAIService : IOpenAIService
 
     private async Task<string?> PickBestModelAsync(OpenAIClient root, HashSet<string> available, string? overrideModelId, CancellationToken cancellationToken)
     {
-        // If user forces a model id, try it first
+        var priority = ModeModelMap.GetPriorityList(SelectedMode);
+        
+        // If user forces a model id, try it first IF it's in the current mode's priority list
         if (!string.IsNullOrWhiteSpace(overrideModelId)
-            && OpenAIModelExtensions.TryParse(overrideModelId, out _)
+            && OpenAIModelExtensions.TryParse(overrideModelId, out var overrideModel)
             && available.Contains(overrideModelId!))
         {
-            if (await ProbeChatAsync(root, overrideModelId!, cancellationToken))
+            // Check if the override model is appropriate for the selected mode
+            if (priority.Contains(overrideModel))
+            {
+                if (await ProbeChatAsync(root, overrideModelId!, cancellationToken))
+                    return overrideModelId;
+            }
+            // If override is not in priority list, still try it but with lower priority
+            // This allows manual model selection to work across modes
+            else if (await ProbeChatAsync(root, overrideModelId!, cancellationToken))
+            {
                 return overrideModelId;
+            }
         }
 
-        var priority = ModeModelMap.GetPriorityList(SelectedMode);
+        // Try models from the priority list for the current mode
         foreach (var candidate in priority)
         {
             var candidateId = candidate.GetModelId();
@@ -255,18 +300,8 @@ public class OpenAIService : IOpenAIService
                 return candidateId;
         }
 
-        // Fallbacks: Try any other known models that are available.
-        var knownAvailable = OpenAIModelExtensions.All
-            .Where(model => available.Contains(model.GetModelId()))
-            .ToList();
-
-        foreach (var fallbackModel in knownAvailable)
-        {
-            var candidateId = fallbackModel.GetModelId();
-            if (await ProbeChatAsync(root, candidateId, cancellationToken))
-                return candidateId;
-        }
-
+        // NO FALLBACK to other modes - return null to provide clear error
+        // This prevents Budget models from being selected when user chose Balanced/Quality mode
         return null;
     }
 
@@ -284,8 +319,20 @@ public class OpenAIService : IOpenAIService
         var modelsPage = await modelClient.GetModelsAsync(cancellationToken);
         var available = modelsPage.Value.Select(m => m.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        var picked = await PickBestModelAsync(root, available, overrideModelId: null, cancellationToken)
-                        ?? throw new InvalidOperationException("No models are available for this API key.");
+        var picked = await PickBestModelAsync(root, available, overrideModelId: null, cancellationToken);
+        
+        if (picked is null)
+        {
+            // Build helpful error message
+            var priority = ModeModelMap.GetPriorityList(SelectedMode);
+            var requiredModels = string.Join(" or ", priority.Select(m => m.GetModelId()));
+            var modeName = SelectedMode.ToString();
+            
+            throw new InvalidOperationException(
+                $"No models available for {modeName} mode. " +
+                $"Required: {requiredModels}. " +
+                $"Please check your OpenAI account or select a different mode.");
+        }
 
         _chosenModel = picked;
         return picked;
