@@ -11,7 +11,7 @@ public class PricingEstimatorTests
     public async Task GetRatesAsync_WithValidModelId_ShouldReturnRates()
     {
         // Arrange
-        var estimator = new JsonPricingEstimator();
+        var estimator = new PriceEstimator();
 
         // Act
         var rates = await estimator.GetRatesAsync("gpt-4.1-mini");
@@ -27,7 +27,7 @@ public class PricingEstimatorTests
     public async Task GetRatesAsync_WithInvalidModelId_ShouldReturnNull()
     {
         // Arrange
-        var estimator = new JsonPricingEstimator();
+        var estimator = new PriceEstimator();
 
         // Act
         var rates = await estimator.GetRatesAsync("invalid-model");
@@ -106,7 +106,7 @@ public class PricingEstimatorTests
     public async Task EstimateTextAsync_ShouldReturnValidEstimate()
     {
         // Arrange
-        var estimator = new JsonPricingEstimator();
+        var estimator = new PriceEstimator();
         var rates = new PricingModelRates
         {
             ModelId = "test-model",
@@ -148,7 +148,7 @@ public class PricingEstimatorTests
 
         // Assert
         priorities.Should().NotBeEmpty();
-        priorities.First().Should().Be("gpt-4.1-mini");
+        priorities.First().Should().Be("o4-mini");
         priorities.Should().Contain("o4-mini");
         priorities.Should().Contain("gpt-4.1");
     }
@@ -161,8 +161,8 @@ public class PricingEstimatorTests
 
         // Assert
         priorities.Should().NotBeEmpty();
-        priorities.First().Should().Be("gpt-4.1");
-        priorities.Should().Contain("o4-mini");
+        priorities.First().Should().Be("gpt-5");
+        priorities.Should().Contain("o3");
     }
 
     [Theory]

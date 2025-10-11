@@ -17,15 +17,14 @@ public static class ModeModelMap
 
     public static readonly IReadOnlyList<string> BalancedPreferred = new[]
     {
-        "gpt-4.1-mini",
         "o4-mini",
         "gpt-4.1",
     };
 
     public static readonly IReadOnlyList<string> QualityPreferred = new[]
     {
-        "gpt-4.1",
-        "o4-mini",
+        "gpt-5",
+        "o3",
     };
 
     public static IReadOnlyList<string> GetPriorityList(OperatingMode mode) => mode switch

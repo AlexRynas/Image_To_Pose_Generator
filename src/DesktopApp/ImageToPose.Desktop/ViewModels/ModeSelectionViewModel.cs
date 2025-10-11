@@ -55,7 +55,7 @@ public partial class ModeSelectionViewModel : ViewModelBase
         {
             Process.Start(new ProcessStartInfo
             {
-                FileName = "https://openai.com/api/pricing",
+                FileName = "https://platform.openai.com/docs/pricing",
                 UseShellExecute = true
             });
         }

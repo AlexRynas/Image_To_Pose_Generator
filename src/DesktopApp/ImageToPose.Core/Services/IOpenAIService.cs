@@ -26,6 +26,7 @@ public class OpenAIService : IOpenAIService
     private readonly ISettingsService _settingsService;
     private readonly IPromptLoader _promptLoader;
     private readonly IPriceEstimator _priceEstimator;
+    private readonly IOpenAIErrorHandler _errorHandler;
 
     // Session-scoped cache so we resolve models once
     private string? _chosenModel;
@@ -33,11 +34,12 @@ public class OpenAIService : IOpenAIService
     public OperatingMode SelectedMode { get; set; } = OperatingMode.Balanced;
     public string? ResolvedModelId => _chosenModel;
 
-    public OpenAIService(ISettingsService settingsService, IPromptLoader promptLoader, IPriceEstimator priceEstimator)
+    public OpenAIService(ISettingsService settingsService, IPromptLoader promptLoader, IPriceEstimator priceEstimator, IOpenAIErrorHandler errorHandler)
     {
         _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
         _promptLoader = promptLoader ?? throw new ArgumentNullException(nameof(promptLoader));
         _priceEstimator = priceEstimator ?? throw new ArgumentNullException(nameof(priceEstimator));
+        _errorHandler = errorHandler ?? throw new ArgumentNullException(nameof(errorHandler));
     }
 
     public async Task<bool> ValidateApiKeyAsync(string apiKey, CancellationToken cancellationToken = default)
@@ -195,7 +197,7 @@ public class OpenAIService : IOpenAIService
         };
     }
 
-    private static async Task<bool> ProbeChatAsync(OpenAIClient root, string model, CancellationToken ct)
+    private async Task<bool> ProbeChatAsync(OpenAIClient root, string model, CancellationToken ct)
     {
         // small backoff loop around a one-token-ish probe
         var chat = root.GetChatClient(model);
@@ -209,9 +211,25 @@ public class OpenAIService : IOpenAIService
                 var r = await chat.CompleteChatAsync(msgs, cancellationToken: ct);
                 return r?.Value?.Content?.Count > 0;
             }
-            catch when (i < delays.Length - 1)
+            catch (Exception ex) when (i < delays.Length - 1)
             {
+                var errorInfo = _errorHandler.Translate(ex);
+                
+                // Don't retry on auth errors or quota errors - they won't get better with retries
+                if (errorInfo.Code.Contains("401") || errorInfo.Code.Contains("403") || errorInfo.Code.Contains("insufficient_quota"))
+                {
+                    return false;
+                }
+                
+                // For rate limits and transient errors, wait before retrying
                 await Task.Delay(delays[i], ct);
+            }
+            catch (Exception ex)
+            {
+                // Last attempt failed, translate the error for logging/debugging purposes
+                var errorInfo = _errorHandler.Translate(ex);
+                // Could log errorInfo here if you have a logger
+                return false;
             }
         }
         return false;

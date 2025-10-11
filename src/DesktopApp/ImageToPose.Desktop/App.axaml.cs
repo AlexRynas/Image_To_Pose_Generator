@@ -34,7 +34,7 @@ public partial class App : Application
         // Core services
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<IPromptLoader, PromptLoader>();
-        services.AddSingleton<IPriceEstimator, JsonPricingEstimator>();
+        services.AddSingleton<IPriceEstimator, PriceEstimator>();
         services.AddSingleton<IOpenAIService, OpenAIService>();
         services.AddSingleton<IOpenAIErrorHandler, OpenAIErrorHandler>();
         

@@ -14,7 +14,7 @@ public class ModeSelectionIntegrationTests
     public async Task CompleteWorkflow_ShouldEstimateCostsCorrectly()
     {
         // Arrange
-        var estimator = new JsonPricingEstimator();
+        var estimator = new PriceEstimator();
         var assumedOutputTokens = 600; // Balanced mode
 
         // Act - Get rates
@@ -54,7 +54,7 @@ public class ModeSelectionIntegrationTests
     public async Task PricingJson_ShouldContainAllRequiredModels()
     {
         // Arrange
-        var estimator = new JsonPricingEstimator();
+        var estimator = new PriceEstimator();
         var requiredModels = new[] { "gpt-4.1-nano", "gpt-4.1-mini", "gpt-4.1", "o4-mini" };
 
         // Act & Assert
@@ -106,7 +106,7 @@ public class ModeSelectionIntegrationTests
     public async Task EstimateWorkflow_DifferentModes_ShouldUseCorrectOutputTokens(OperatingMode mode, int expectedOutput)
     {
         // Arrange
-        var estimator = new JsonPricingEstimator();
+        var estimator = new PriceEstimator();
         var rates = await estimator.GetRatesAsync("gpt-4.1-mini");
         rates.Should().NotBeNull();
 
@@ -196,12 +196,12 @@ public class ModeSelectionIntegrationTests
 
         // Balanced
         var balancedPriorities = ModeModelMap.GetPriorityList(OperatingMode.Balanced);
-        balancedPriorities.Should().StartWith("gpt-4.1-mini");
-        balancedPriorities.Should().ContainInOrder("gpt-4.1-mini", "o4-mini", "gpt-4.1");
+        balancedPriorities.Should().StartWith("o4-mini");
+        balancedPriorities.Should().ContainInOrder("o4-mini", "gpt-4.1");
 
         // Quality
         var qualityPriorities = ModeModelMap.GetPriorityList(OperatingMode.Quality);
-        qualityPriorities.Should().StartWith("gpt-4.1");
-        qualityPriorities.Should().Contain("o4-mini");
+        qualityPriorities.Should().StartWith("gpt-5");
+        qualityPriorities.Should().Contain("o3");
     }
 }

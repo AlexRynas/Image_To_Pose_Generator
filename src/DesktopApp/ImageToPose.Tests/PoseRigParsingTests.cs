@@ -12,8 +12,9 @@ public class PoseRigParsingTests
         // Arrange
         var settingsService = new SettingsService();
         var promptLoader = new MockPromptLoader();
-        var priceEstimator = new JsonPricingEstimator();
-        var openAIService = new OpenAIService(settingsService, promptLoader, priceEstimator);
+        var priceEstimator = new PriceEstimator();
+        var errorHandler = new OpenAIErrorHandler();
+        var openAIService = new OpenAIService(settingsService, promptLoader, priceEstimator, errorHandler);
         
         var llmResponse = @"```python
 POSE_DEGREES = {
@@ -43,8 +44,9 @@ POSE_DEGREES = {
         // Arrange
         var settingsService = new SettingsService();
         var promptLoader = new MockPromptLoader();
-        var priceEstimator = new JsonPricingEstimator();
-        var openAIService = new OpenAIService(settingsService, promptLoader, priceEstimator);
+        var priceEstimator = new PriceEstimator();
+        var errorHandler = new OpenAIErrorHandler();
+        var openAIService = new OpenAIService(settingsService, promptLoader, priceEstimator, errorHandler);
         
         var llmResponse = @"POSE_DEGREES = {
     ""upperarm_l"": [45.0, -30.0, 20.0],
