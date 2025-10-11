@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ImageToPose.Core.Models;
@@ -11,6 +14,7 @@ public partial class ModeSelectionViewModel : ViewModelBase
     private readonly IOpenAIService _openAIService;
     private readonly IPriceEstimator _priceEstimator;
     private readonly IOpenAIErrorHandler _errorHandler;
+    private bool _suppressSelectionUpdate;
 
     [ObservableProperty]
     private OperatingMode _mode = OperatingMode.Balanced;
@@ -33,19 +37,41 @@ public partial class ModeSelectionViewModel : ViewModelBase
     [ObservableProperty]
     private string _errorMessage = string.Empty;
 
+    [ObservableProperty]
+    private List<string> _availableModelIds = ModeModelMap.GetPriorityList(OperatingMode.Balanced)
+        .Select(model => model.GetModelId())
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToList();
+
+    [ObservableProperty]
+    private string? _selectedModelId;
+
     public ModeSelectionViewModel(IOpenAIService openAIService, IPriceEstimator priceEstimator, IOpenAIErrorHandler errorHandler)
     {
         _openAIService = openAIService;
         _priceEstimator = priceEstimator;
         _errorHandler = errorHandler;
         _openAIService.SelectedMode = _mode;
+        SetSelectedModelIdSilently(AvailableModelIds.FirstOrDefault());
+        _ = ResolveModelAndRatesAsync(SelectedModelId);
     }
 
     partial void OnModeChanged(OperatingMode value)
     {
         _openAIService.SelectedMode = value;
         ModeDescription = ModeModelMap.GetModeDescription(value);
-        _ = ResolveModelAndRatesAsync();
+        AvailableModelIds = ModeModelMap.GetPriorityList(value)
+            .Select(model => model.GetModelId())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (!ContainsModelId(SelectedModelId))
+        {
+            var defaultModelId = AvailableModelIds.FirstOrDefault();
+            SetSelectedModelIdSilently(defaultModelId);
+        }
+
+        _ = ResolveModelAndRatesAsync(SelectedModelId);
     }
 
     [RelayCommand]
@@ -117,13 +143,17 @@ public partial class ModeSelectionViewModel : ViewModelBase
         }
     }
 
-    public async Task ResolveModelAndRatesAsync()
+    public async Task ResolveModelAndRatesAsync(string? preferredModelId = null)
     {
         try
         {
             ErrorMessage = string.Empty;
-            var modelId = await _openAIService.ResolveModelAsync();
+            var modelId = await _openAIService.ResolveModelAsync(preferredModelId);
             ResolvedModelId = modelId;
+            if (ContainsModelId(modelId))
+            {
+                SetSelectedModelIdSilently(modelId);
+            }
             _ = await _openAIService.GetResolvedModelRatesAsync();
         }
         catch (Exception ex)
@@ -133,4 +163,43 @@ public partial class ModeSelectionViewModel : ViewModelBase
             ErrorMessage = info.Message;
         }
     }
+
+    partial void OnSelectedModelIdChanged(string? value)
+    {
+        if (_suppressSelectionUpdate)
+        {
+            return;
+        }
+
+        if (string.Equals(value, ResolvedModelId, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        _ = ResolveModelAndRatesAsync(value);
+    }
+
+    private void SetSelectedModelIdSilently(string? modelId)
+    {
+        try
+        {
+            _suppressSelectionUpdate = true;
+            SelectedModelId = modelId;
+        }
+        finally
+        {
+            _suppressSelectionUpdate = false;
+        }
+    }
+
+    private bool ContainsModelId(string? modelId)
+    {
+        if (string.IsNullOrWhiteSpace(modelId))
+        {
+            return false;
+        }
+
+        return AvailableModelIds.Any(id => string.Equals(id, modelId, StringComparison.OrdinalIgnoreCase));
+    }
+
 }

@@ -23,9 +23,11 @@
                             </ComboBox.Items>
                         </ComboBox>
                         <TextBlock Text="{Binding ModeVM.ModeDescription}" FontSize="12" Foreground="{DynamicResource Brush.TextMuted}" TextWrapping="Wrap"/>
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                            <TextBlock Text="Using:"/>
-                            <TextBlock Text="{Binding ModeVM.ResolvedModelId}" FontWeight="SemiBold"/>
+                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <TextBlock Text="Using:" VerticalAlignment="Center"/>
+                            <ComboBox ItemsSource="{Binding ModeVM.AvailableModelIds}"
+                                      SelectedItem="{Binding ModeVM.SelectedModelId, Mode=TwoWay}"
+                                      MinWidth="180"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <Button Content="OpenAI Pricing" Command="{Binding ModeVM.RefreshPricingCommand}" HorizontalAlignment="Left"/>
