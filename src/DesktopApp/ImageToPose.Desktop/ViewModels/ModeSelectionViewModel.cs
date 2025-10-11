@@ -122,7 +122,7 @@ public partial class ModeSelectionViewModel : ViewModelBase
         try
         {
             ErrorMessage = string.Empty;
-            var modelId = await _openAIService.ResolveModelAsync(requireVision: true);
+            var modelId = await _openAIService.ResolveModelAsync();
             ResolvedModelId = modelId;
             _ = await _openAIService.GetResolvedModelRatesAsync();
         }

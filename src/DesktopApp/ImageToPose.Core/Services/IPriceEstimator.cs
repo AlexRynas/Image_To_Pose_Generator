@@ -71,12 +71,12 @@ public class PriceEstimator : IPriceEstimator
         {
             var seed = new Dictionary<string, object>
             {
-                ["gpt-4.1-nano"] = new { input_per_million = 0.10m, output_per_million = 0.40m },
-                ["gpt-4.1-mini"] = new { input_per_million = 0.40m, output_per_million = 1.60m },
-                ["gpt-4.1"] = new { input_per_million = 2.00m, output_per_million = 8.00m },
-                ["o4-mini"] = new { input_per_million = 1.10m, output_per_million = 4.40m },
-                ["gpt-5"] = new { input_per_million = 1.25m, output_per_million = 10.00m },
-                ["o3"] = new { input_per_million = 2.00m, output_per_million = 8.00m },
+                [OpenAIModel.Gpt41Nano.GetModelId()] = new { input_per_million = 0.10m, output_per_million = 0.40m },
+                [OpenAIModel.Gpt41Mini.GetModelId()] = new { input_per_million = 0.40m, output_per_million = 1.60m },
+                [OpenAIModel.Gpt41.GetModelId()] = new { input_per_million = 2.00m, output_per_million = 8.00m },
+                [OpenAIModel.O4Mini.GetModelId()] = new { input_per_million = 1.10m, output_per_million = 4.40m },
+                [OpenAIModel.Gpt5.GetModelId()] = new { input_per_million = 1.25m, output_per_million = 10.00m },
+                [OpenAIModel.O3.GetModelId()] = new { input_per_million = 2.00m, output_per_million = 8.00m },
                 ["_disclaimer"] = "Approximate defaults. Please verify on https://platform.openai.com/docs/pricing"
             };
             var jsonSeed = JsonSerializer.Serialize(seed, new JsonSerializerOptions { WriteIndented = true });

@@ -1,7 +1,6 @@
 using FluentAssertions;
 using ImageToPose.Core.Models;
 using ImageToPose.Core.Services;
-using Xunit;
 
 namespace ImageToPose.Tests;
 
@@ -18,11 +17,11 @@ public class ModeSelectionIntegrationTests
         var assumedOutputTokens = 600; // Balanced mode
 
         // Act - Get rates
-        var rates = await estimator.GetRatesAsync("gpt-4.1-mini");
+    var rates = await estimator.GetRatesAsync(OpenAIModel.Gpt41Mini.GetModelId());
 
         // Assert - Rates loaded
         rates.Should().NotBeNull();
-        rates!.ModelId.Should().Be("gpt-4.1-mini");
+    rates!.ModelId.Should().Be(OpenAIModel.Gpt41Mini.GetModelId());
 
         // Act - Estimate text (simulating rough pose input)
         var roughText = "Character standing with left arm raised, right arm at side, head turned left.";
@@ -55,11 +54,12 @@ public class ModeSelectionIntegrationTests
     {
         // Arrange
         var estimator = new PriceEstimator();
-        var requiredModels = new[] { "gpt-4.1-nano", "gpt-4.1-mini", "gpt-4.1", "o4-mini" };
+        var requiredModels = new[] { OpenAIModel.Gpt41Nano, OpenAIModel.Gpt41Mini, OpenAIModel.Gpt41, OpenAIModel.O4Mini };
 
         // Act & Assert
-        foreach (var modelId in requiredModels)
+        foreach (var model in requiredModels)
         {
+            var modelId = model.GetModelId();
             var rates = await estimator.GetRatesAsync(modelId);
             rates.Should().NotBeNull($"{modelId} should be in pricing.json");
             rates!.InputPerMillion.Should().BeGreaterThan(0, $"{modelId} should have positive input rate");
@@ -107,7 +107,7 @@ public class ModeSelectionIntegrationTests
     {
         // Arrange
         var estimator = new PriceEstimator();
-        var rates = await estimator.GetRatesAsync("gpt-4.1-mini");
+    var rates = await estimator.GetRatesAsync(OpenAIModel.Gpt41Mini.GetModelId());
         rates.Should().NotBeNull();
 
         // Act
@@ -190,18 +190,18 @@ public class ModeSelectionIntegrationTests
     public void ModelPriorities_ShouldMatchSpecification()
     {
         // Budget
-        var budgetPriorities = ModeModelMap.GetPriorityList(OperatingMode.Budget);
-        budgetPriorities.Should().StartWith("gpt-4.1-nano");
-        budgetPriorities.Should().Contain("gpt-4.1-mini");
+    var budgetPriorities = ModeModelMap.GetPriorityList(OperatingMode.Budget);
+    budgetPriorities.Should().StartWith(OpenAIModel.Gpt41Nano);
+    budgetPriorities.Should().Contain(OpenAIModel.Gpt41Mini);
 
         // Balanced
         var balancedPriorities = ModeModelMap.GetPriorityList(OperatingMode.Balanced);
-        balancedPriorities.Should().StartWith("o4-mini");
-        balancedPriorities.Should().ContainInOrder("o4-mini", "gpt-4.1");
+    balancedPriorities.Should().StartWith(OpenAIModel.O4Mini);
+    balancedPriorities.Should().ContainInOrder(OpenAIModel.O4Mini, OpenAIModel.Gpt41);
 
         // Quality
         var qualityPriorities = ModeModelMap.GetPriorityList(OperatingMode.Quality);
-        qualityPriorities.Should().StartWith("gpt-5");
-        qualityPriorities.Should().Contain("o3");
+    qualityPriorities.Should().StartWith(OpenAIModel.Gpt5);
+    qualityPriorities.Should().Contain(OpenAIModel.O3);
     }
 }

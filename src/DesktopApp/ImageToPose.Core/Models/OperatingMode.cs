@@ -1,3 +1,7 @@
+using System.Collections.ObjectModel;
+using System.Reflection;
+using System.Runtime.Serialization;
+
 namespace ImageToPose.Core.Models;
 
 public enum OperatingMode
@@ -7,27 +11,88 @@ public enum OperatingMode
     Quality = 2,
 }
 
+public enum OpenAIModel
+{
+    [EnumMember(Value = "gpt-4.1-nano")]
+    Gpt41Nano = 0,
+    [EnumMember(Value = "gpt-4.1-mini")]
+    Gpt41Mini = 1,
+    [EnumMember(Value = "gpt-4.1")]
+    Gpt41 = 2,
+    [EnumMember(Value = "o4-mini")]
+    O4Mini = 3,
+    [EnumMember(Value = "gpt-5")]
+    Gpt5 = 4,
+    [EnumMember(Value = "o3")]
+    O3 = 5,
+}
+
+public static class OpenAIModelExtensions
+{
+    private static readonly IReadOnlyDictionary<OpenAIModel, string> _idByModel;
+    private static readonly IReadOnlyDictionary<string, OpenAIModel> _modelById;
+
+    static OpenAIModelExtensions()
+    {
+        var allValues = Enum.GetValues<OpenAIModel>();
+        var idByModel = new Dictionary<OpenAIModel, string>(allValues.Length);
+
+        foreach (var model in allValues)
+        {
+            var id = model.GetEnumMemberValue() ?? model.ToString();
+            idByModel[model] = id;
+        }
+
+        _idByModel = new ReadOnlyDictionary<OpenAIModel, string>(idByModel);
+        _modelById = new ReadOnlyDictionary<string, OpenAIModel>(
+            idByModel.ToDictionary(kvp => kvp.Value, kvp => kvp.Key, StringComparer.OrdinalIgnoreCase));
+
+        All = Array.AsReadOnly(allValues);
+    }
+
+    public static IReadOnlyList<OpenAIModel> All { get; }
+
+    public static string GetModelId(this OpenAIModel model) => _idByModel[model];
+
+    public static bool TryParse(string? modelId, out OpenAIModel model)
+    {
+        if (!string.IsNullOrWhiteSpace(modelId) && _modelById.TryGetValue(modelId, out model))
+        {
+            return true;
+        }
+
+        model = default;
+        return false;
+    }
+
+    private static string? GetEnumMemberValue(this OpenAIModel model)
+    {
+        var member = typeof(OpenAIModel).GetField(model.ToString(), BindingFlags.Public | BindingFlags.Static);
+        return member?.GetCustomAttribute<EnumMemberAttribute>()?.Value;
+    }
+}
+
 public static class ModeModelMap
 {
-    public static readonly IReadOnlyList<string> BudgetPreferred = new[]
+    public static readonly IReadOnlyList<OpenAIModel> BudgetPreferred = new[]
     {
-        "gpt-4.1-nano",
-        "gpt-4.1-mini",
+        OpenAIModel.Gpt41Nano,
+        OpenAIModel.Gpt41Mini,
     };
 
-    public static readonly IReadOnlyList<string> BalancedPreferred = new[]
+    public static readonly IReadOnlyList<OpenAIModel> BalancedPreferred = new[]
     {
-        "o4-mini",
-        "gpt-4.1",
+        OpenAIModel.O4Mini,
+        OpenAIModel.Gpt41,
     };
 
-    public static readonly IReadOnlyList<string> QualityPreferred = new[]
+    public static readonly IReadOnlyList<OpenAIModel> QualityPreferred = new[]
     {
-        "gpt-5",
-        "o3",
+        OpenAIModel.Gpt5,
+        OpenAIModel.O3,
     };
 
-    public static IReadOnlyList<string> GetPriorityList(OperatingMode mode) => mode switch
+    public static IReadOnlyList<OpenAIModel> GetPriorityList(OperatingMode mode) => mode switch
     {
         OperatingMode.Budget => BudgetPreferred,
         OperatingMode.Balanced => BalancedPreferred,

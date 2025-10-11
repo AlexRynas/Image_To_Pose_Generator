@@ -17,7 +17,7 @@ public interface IOpenAIService
     // Mode & Pricing hooks
     OperatingMode SelectedMode { get; set; }
     string? ResolvedModelId { get; }
-    Task<string> ResolveModelAsync(bool requireVision, string? overrideModelId = null, CancellationToken cancellationToken = default);
+    Task<string> ResolveModelAsync(string? overrideModelId = null, CancellationToken cancellationToken = default);
     Task<PricingModelRates?> GetResolvedModelRatesAsync(CancellationToken cancellationToken = default);
 }
 
@@ -54,7 +54,7 @@ public class OpenAIService : IOpenAIService
             var available = modelsPage.Value.Select(m => m.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             // Try resolve according to selected mode
-            var picked = await PickBestModelAsync(root, available, requireVision: true, overrideModelId: null, cancellationToken);
+            var picked = await PickBestModelAsync(root, available, overrideModelId: null, cancellationToken);
             if (picked is null) return false;
 
             _chosenModel = picked; // cache for the session
@@ -66,7 +66,7 @@ public class OpenAIService : IOpenAIService
         }
     }
 
-    public async Task<string> ResolveModelAsync(bool requireVision, string? overrideModelId = null, CancellationToken cancellationToken = default)
+    public async Task<string> ResolveModelAsync(string? overrideModelId = null, CancellationToken cancellationToken = default)
     {
         var options = _settingsService.GetOpenAIOptions();
         if (string.IsNullOrWhiteSpace(options.ApiKey))
@@ -76,8 +76,8 @@ public class OpenAIService : IOpenAIService
         var modelClient = root.GetOpenAIModelClient();
         var modelsPage = await modelClient.GetModelsAsync(cancellationToken);
         var available = modelsPage.Value.Select(m => m.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var picked = await PickBestModelAsync(root, available, requireVision, overrideModelId, cancellationToken)
-                    ?? throw new InvalidOperationException("No compatible models available for this API key.");
+        var picked = await PickBestModelAsync(root, available, overrideModelId, cancellationToken)
+                        ?? throw new InvalidOperationException("No compatible models available for this API key.");
         _chosenModel = picked;
         return picked;
     }
@@ -98,7 +98,7 @@ public class OpenAIService : IOpenAIService
         var client = new OpenAIClient(options.ApiKey);
 
         // Resolve a model that actually works for this key (vision required)
-        var model = await EnsureModelAsync(client, requireVision: true, cancellationToken);
+        var model = await EnsureModelAsync(client, cancellationToken);
 
         // Load prompt #1
         var promptTemplate = await _promptLoader.LoadAnalyzeImagePromptAsync(cancellationToken);
@@ -147,7 +147,7 @@ public class OpenAIService : IOpenAIService
             throw new InvalidOperationException("OpenAI API key is not set");
 
         var client = new OpenAIClient(options.ApiKey);
-        var model = await EnsureModelAsync(client, requireVision: false, cancellationToken);
+        var model = await EnsureModelAsync(client, cancellationToken);
 
         var promptTemplate = await _promptLoader.LoadGenerateRigPromptAsync(cancellationToken);
 
@@ -214,13 +214,13 @@ public class OpenAIService : IOpenAIService
             catch (Exception ex) when (i < delays.Length - 1)
             {
                 var errorInfo = _errorHandler.Translate(ex);
-                
+
                 // Don't retry on auth errors or quota errors - they won't get better with retries
                 if (errorInfo.Code.Contains("401") || errorInfo.Code.Contains("403") || errorInfo.Code.Contains("insufficient_quota"))
                 {
                     return false;
                 }
-                
+
                 // For rate limits and transient errors, wait before retrying
                 await Task.Delay(delays[i], ct);
             }
@@ -235,18 +235,12 @@ public class OpenAIService : IOpenAIService
         return false;
     }
 
-    private static bool SupportsVision(string modelId)
-    {
-        // Heuristic: 4.1/4o/o4 lines are vision-capable; extend if needed.
-        return modelId.StartsWith("gpt-4.1", StringComparison.OrdinalIgnoreCase)
-            || modelId.StartsWith("gpt-4o", StringComparison.OrdinalIgnoreCase)
-            || modelId.StartsWith("o4", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private async Task<string?> PickBestModelAsync(OpenAIClient root, HashSet<string> available, bool requireVision, string? overrideModelId, CancellationToken cancellationToken)
+    private async Task<string?> PickBestModelAsync(OpenAIClient root, HashSet<string> available, string? overrideModelId, CancellationToken cancellationToken)
     {
         // If user forces a model id, try it first
-        if (!string.IsNullOrWhiteSpace(overrideModelId) && available.Contains(overrideModelId!) && (!requireVision || SupportsVision(overrideModelId!)))
+        if (!string.IsNullOrWhiteSpace(overrideModelId)
+            && OpenAIModelExtensions.TryParse(overrideModelId, out _)
+            && available.Contains(overrideModelId!))
         {
             if (await ProbeChatAsync(root, overrideModelId!, cancellationToken))
                 return overrideModelId;
@@ -255,36 +249,43 @@ public class OpenAIService : IOpenAIService
         var priority = ModeModelMap.GetPriorityList(SelectedMode);
         foreach (var candidate in priority)
         {
-            if (!available.Contains(candidate)) continue;
-            if (requireVision && !SupportsVision(candidate)) continue;
-            if (await ProbeChatAsync(root, candidate, cancellationToken))
-                return candidate;
+            var candidateId = candidate.GetModelId();
+            if (!available.Contains(candidateId)) continue;
+            if (await ProbeChatAsync(root, candidateId, cancellationToken))
+                return candidateId;
         }
 
-        // Fallbacks: any gpt-4* then any available
-        string? picked = available.FirstOrDefault(m => m.StartsWith("gpt-4", StringComparison.OrdinalIgnoreCase) && (!requireVision || SupportsVision(m)))
-            ?? available.FirstOrDefault(m => !requireVision || SupportsVision(m))
-            ?? available.FirstOrDefault();
+        // Fallbacks: Try any other known models that are available.
+        var knownAvailable = OpenAIModelExtensions.All
+            .Where(model => available.Contains(model.GetModelId()))
+            .ToList();
 
-        if (picked is null) return null;
-        if (await ProbeChatAsync(root, picked, cancellationToken)) return picked;
+        foreach (var fallbackModel in knownAvailable)
+        {
+            var candidateId = fallbackModel.GetModelId();
+            if (await ProbeChatAsync(root, candidateId, cancellationToken))
+                return candidateId;
+        }
+
         return null;
     }
 
-    private async Task<string> EnsureModelAsync(OpenAIClient root, bool requireVision, CancellationToken cancellationToken)
+    private async Task<string> EnsureModelAsync(OpenAIClient root, CancellationToken cancellationToken)
     {
         if (!string.IsNullOrWhiteSpace(_chosenModel)
-            && (!requireVision || SupportsVision(_chosenModel)))
+            && OpenAIModelExtensions.TryParse(_chosenModel, out _))
         {
             return _chosenModel!;
         }
+
+        _chosenModel = null;
 
         var modelClient = root.GetOpenAIModelClient();
         var modelsPage = await modelClient.GetModelsAsync(cancellationToken);
         var available = modelsPage.Value.Select(m => m.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        var picked = await PickBestModelAsync(root, available, requireVision, overrideModelId: null, cancellationToken)
-                    ?? throw new InvalidOperationException("No models are available for this API key.");
+        var picked = await PickBestModelAsync(root, available, overrideModelId: null, cancellationToken)
+                        ?? throw new InvalidOperationException("No models are available for this API key.");
 
         _chosenModel = picked;
         return picked;
