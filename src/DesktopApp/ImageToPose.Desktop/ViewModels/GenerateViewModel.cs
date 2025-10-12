@@ -169,10 +169,10 @@ public partial class GenerateViewModel : ViewModelBase
         
         try
         {
-            // Try to open the docs file from the repository
-            var docsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "..", "docs", "BlenderWorkflow.md");
+            // Start from the base directory and search upward for the repository root
+            var docsPath = FindDocsFile();
             
-            if (File.Exists(docsPath))
+            if (!string.IsNullOrEmpty(docsPath) && File.Exists(docsPath))
             {
                 var fullPath = Path.GetFullPath(docsPath);
                 GenerateViewModelLogs.OpeningDocsFile(_logger, fullPath);
@@ -185,13 +185,35 @@ public partial class GenerateViewModel : ViewModelBase
             }
             else
             {
-                GenerateViewModelLogs.DocsFileNotFound(_logger, docsPath);
+                GenerateViewModelLogs.DocsFileNotFound(_logger, docsPath ?? "unknown");
             }
         }
         catch (Exception ex)
         {
             GenerateViewModelLogs.OpenDocsFailed(_logger, ex);
         }
+    }
+
+    private static string? FindDocsFile()
+    {
+        // Start from the application's base directory
+        var currentDir = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
+        
+        // Search upward for the docs folder (max 10 levels to prevent infinite loop)
+        for (int i = 0; i < 10 && currentDir != null; i++)
+        {
+            var docsDir = Path.Combine(currentDir.FullName, "docs");
+            var docsFile = Path.Combine(docsDir, "BlenderWorkflow.md");
+            
+            if (File.Exists(docsFile))
+            {
+                return docsFile;
+            }
+            
+            currentDir = currentDir.Parent;
+        }
+        
+        return null;
     }
 
     public bool CanGeneratePoseRig => !string.IsNullOrWhiteSpace(ExtendedPoseDescription) && !IsGenerating;
