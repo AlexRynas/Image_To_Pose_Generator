@@ -12,14 +12,16 @@ This project enables you to:
 
 The workflow combines computer vision analysis with biomechanical understanding to create accurate 3D poses from 2D references.
 
-## 🖥️ Desktop Application (NEW!)
+## 🖥️ Desktop Application
 
 **A standalone Windows application with a user-friendly wizard interface for generating poses from images.**
 
 ### Features
 
 - **Step-by-step wizard workflow**: Intuitive interface guiding you from image selection to final pose generation
-- **OpenAI Integration**: Uses GPT-4 Vision for image analysis and GPT-4 for pose generation
+- **Operating modes**: Choose between Budget, Balanced, or Quality modes to optimize cost vs. quality
+- **OpenAI Integration**: Uses GPT-4 Vision for image analysis with intelligent model selection and fallbacks
+- **Real-time cost estimation**: See estimated API costs before making calls
 - **Real-time validation**: Validates your API key before proceeding
 - **Image preview**: See your reference image while working
 - **Editable descriptions**: Review and refine AI-generated pose descriptions
@@ -30,11 +32,12 @@ The workflow combines computer vision analysis with biomechanical understanding 
 
 1. **Download** the latest release (single `.exe` file)
 2. **Run** `ImageToPose.Desktop.exe`
-3. **Provide your OpenAI API key** when prompted ([Get one here](https://platform.openai.com/api-keys))
-4. **Select a reference image** and describe the rough pose
-5. **Review** the AI-generated extended pose description
-6. **Generate** bone rotations for your MPFB GameEngine rig
-7. **Copy or save** the JSON output
+3. **Provide your OpenAI API key** ([Get one here](https://platform.openai.com/api-keys))
+4. **Select operating mode** (Budget/Balanced/Quality)
+5. **Select a reference image** and describe the rough pose
+6. **Review** the AI-generated extended pose description
+7. **Generate** bone rotations for your MPFB GameEngine rig
+8. **Copy or save** the JSON output
 
 ### Requirements
 
@@ -42,81 +45,44 @@ The workflow combines computer vision analysis with biomechanical understanding 
 - **OpenAI API key** (required - you provide your own)
 - Internet connection for API calls
 
-## Model Modes & Cost Estimates
+## Operating Modes & Cost Estimates
 
-The desktop application offers **three operating modes** that let you balance quality vs. cost:
+The desktop application offers **three operating modes** that balance quality vs. cost:
 
 ### Operating Modes
 
-#### 1. **Budget** - "Fast & cheapest; ok for simple photos."
-- **Preferred Model**: `gpt-4.1-nano` (fallback: `gpt-4.1-mini`)
-- **Best For**: Simple, straightforward poses where speed and cost matter most
-- **Expected Output**: ~300 tokens per step
-- **Trade-offs**: May miss subtle pose details or nuances
+1. **Budget** - Fast & cheapest; ok for simple photos
+   - Preferred Model: `gpt-4.1-nano` (fallback: `gpt-4.1-mini`)
+   - Best for simple, straightforward poses
+   - Expected Output: ~300 tokens per step
 
-#### 2. **Balanced** (Default) - "Good quality for most cases."
-- **Preferred Model**: `gpt-4.1-mini` (fallbacks: `o4-mini`, `gpt-4.1`)
-- **Best For**: Most everyday use cases - reliable quality at reasonable cost
-- **Expected Output**: ~600 tokens per step
-- **Trade-offs**: Good balance of accuracy and affordability
+2. **Balanced** (Default) - Good quality for most cases
+   - Preferred Model: `gpt-4.1-mini` (fallbacks: `o4-mini`, `gpt-4.1`)
+   - Best for most everyday use cases
+   - Expected Output: ~600 tokens per step
 
-#### 3. **Quality** - "Best quality at a sensible price."
-- **Preferred Model**: `gpt-4.1` (fallback: `o4-mini`)
-- **Best For**: Complex poses, challenging angles, or maximum accuracy
-- **Expected Output**: ~800 tokens per step
-- **Trade-offs**: Higher cost, but best results
+3. **Quality** - Best quality at a sensible price
+   - Preferred Model: `gpt-4.1` (fallback: `o4-mini`)
+   - Best for complex poses or maximum accuracy
+   - Expected Output: ~800 tokens per step
 
 ### Cost Estimation
 
-The app shows **real-time cost estimates** before you make API calls:
+The app shows **real-time cost estimates** before API calls, calculated using:
+- **SharpToken** (tiktoken for .NET) for token counting
+- OpenAI's tile-based formula for image tokens
+- Pricing rates from `config/pricing.json` (auto-generated, user-editable)
 
-- **Step 1 (Vision)**: Image analysis + rough pose → extended description
-  - Displays: Input tokens (image + text), assumed output tokens, ≈ USD cost
-- **Step 2 (Text)**: Extended description → bone rotations JSON
-  - Displays: Input tokens (text only), assumed output tokens, ≈ USD cost
-
-**Important Notes**:
-- Estimates use token counts from **SharpToken** (tiktoken for .NET)
-- Image tokens calculated using OpenAI's tile-based formula: 512×512 tiles, 70 base tokens + 140 per tile
-- Pricing rates stored in `config/pricing.json` (auto-generated on first run)
-- **Always verify** pricing at [OpenAI's Pricing Page](https://openai.com/api/pricing) - rates can change!
-
-### Updating Pricing Rates
-
-The app generates a default `config/pricing.json` with approximate rates:
-
-```json
-{
-  "gpt-4.1-nano": { "input_per_million": 0.10, "output_per_million": 0.40 },
-  "gpt-4.1-mini": { "input_per_million": 0.40, "output_per_million": 1.60 },
-  "gpt-4.1":      { "input_per_million": 2.50, "output_per_million": 10.00 },
-  "o4-mini":      { "input_per_million": 3.00, "output_per_million": 12.00 }
-}
-```
-
-**To update rates**:
-1. Click "OpenAI Pricing" button in the app (opens browser)
-2. Check current rates for your desired models
-3. Edit `config/pricing.json` next to the executable
-4. Restart the app or recompute estimates
+**Always verify pricing** at [OpenAI's Pricing Page](https://openai.com/api/pricing)
 
 ### Model Selection & Fallbacks
 
-After you validate your API key, the app:
-1. Lists available models using `/v1/models` API
-2. Picks the **first available model** from your mode's priority list
-3. **Probes** the model with a test request to ensure it works
-4. Falls back to the next candidate if needed
-5. Displays the **resolved model** (e.g., "Using: gpt-4.1-mini")
-
-If your API key doesn't have access to the preferred model, you'll see:
-- **"Switched to: [model] (closest available)"** with a tooltip explaining the fallback
-
-### Requirements
-
-- **Windows 10/11** (64-bit)
-- **OpenAI API key** (required - you provide your own)
-- Internet connection for API calls
+The app automatically:
+1. Lists available models from your API key
+2. Selects the best available model from your mode's priority list
+3. Tests the model with a probe request
+4. Falls back to alternatives if needed
+5. Displays the resolved model in the UI
 
 ### Building from Source
 
@@ -124,184 +90,199 @@ If your API key doesn't have access to the preferred model, you'll see:
 cd src/DesktopApp
 dotnet build ImageToPose.sln
 
-# To create a single-file executable:
+# Create single-file executable:
 dotnet publish ImageToPose.Desktop -c Release -r win-x64
 ```
 
-The resulting executable will be in `bin/Release/net9.0/win-x64/publish/`.
+The executable will be in `bin/Release/net9.0/win-x64/publish/`.
 
 ### Privacy & Security
 
 - ✅ Your API key is stored **in memory only** during the session
-- ✅ No data is saved to disk without your explicit action (Save JSON)
+- ✅ No data saved to disk without your explicit action
 - ✅ API calls go directly to OpenAI - no third-party servers
-- ⚠️ Requires your own OpenAI API key (API usage charges apply)
+- ⚠️ API usage charges apply (you provide your own key)
 
-See the [Blender Workflow Guide](docs/BlenderWorkflow.md) for detailed instructions on applying generated poses.
+See the [Blender Workflow Guide](docs/BlenderWorkflow.md) for applying generated poses.
 
 ---
 
 ## 🐍 Python Scripts & Blender Integration
 
-This project also provides Python scripts for direct integration with Blender, allowing for greater customization and control over the pose generation process.
+Python scripts for direct Blender integration, allowing greater customization and control.
 
 ### Features
 
-- **AI-Powered Pose Analysis**: Uses structured prompts to analyze human poses in images with anatomical precision
-- **Blender Integration**: Seamlessly works with Blender 4.2+ armatures
-- **FK Rigging Support**: Designed for Forward Kinematics (FK) rigs with local XYZ Euler rotations
-- **Anatomical Accuracy**: Respects proper anatomical conventions (left/right from character's perspective)
-- **Comprehensive Bone Coverage**: Supports full body rigs including:
-  - Spine chain (Hips, Spine, Spine1-3, Neck, Head)
-  - Arms (Shoulders, Arms, Forearms, Hands)
-  - Legs (Upper legs, Lower legs, Feet, Toes)
-- **Armature Export**: Export detailed armature data for analysis and processing
+- **AI-Powered Pose Analysis**: Structured prompts for anatomical precision
+- **Blender Integration**: Works with Blender 4.2+ armatures
+- **FK Rigging Support**: Forward Kinematics with local XYZ Euler rotations
+- **Anatomical Accuracy**: Proper left/right conventions
+- **Comprehensive Coverage**: Full body including spine, arms, legs
+- **Armature Export**: Export armature data for analysis
 
-## Project Structure
+### Project Structure
 
 ```
 Image_To_Pose_Generator/
-├── analyse_image_and_get_pose_description_prompt.txt  # AI prompt for pose analysis
-├── chatgpt_prompt.txt                                 # Instructions for pose-to-rotation conversion
-├── apply_pose_template.py                             # Blender script to apply poses
-├── armature_exporter.py                               # Export armature data to JSON
-└── README.md                                          # This file
+├── analyse_image_and_get_pose_description_prompt.txt
+├── chatgpt_prompt.txt
+├── apply_pose_template.py
+├── armature_exporter.py
+└── README.md
 ```
 
-## How It Works
+### Workflow
 
-### 1. Image Analysis
-Using the prompts in `analyse_image_and_get_pose_description_prompt.txt`, an AI vision model analyzes reference images to generate detailed pose descriptions covering:
-- Camera angle and view
-- Weight distribution and stance
-- Head and neck positioning
-- Torso orientation and lean
-- Shoulder and arm positions
-- Hand gestures and orientations
-- Hip and leg positioning
-- Foot angles and ankle positions
+1. **Image Analysis**: Use AI vision model with provided prompts
+2. **Pose Conversion**: Convert description to bone rotations
+3. **Pose Application**: Apply to Blender armatures via script
 
-### 2. Pose Conversion
-The `chatgpt_prompt.txt` contains detailed instructions for converting natural language pose descriptions into precise bone rotations, including:
-- Rotation conventions and axis definitions
-- Anatomical left/right conventions
-- Bone hierarchy and constraints
-- Angle calculations for each bone
+### Usage
 
-### 3. Pose Application
-The `apply_pose_template.py` script applies the calculated rotations to Blender armatures:
-- Sets up pose mode
-- Applies rotations to each bone in the correct order
-- Respects bone constraints and limitations
-- Supports left/right swapping for mirrored poses
-
-## Usage
-
-### Prerequisites
-- Blender 4.2 or later
-- A rigged character with standard bone naming conventions
-- AI model access (ChatGPT, Claude, etc.) for pose analysis
-
-### Basic Workflow
-
-1. **Prepare Your Armature**
-   - Ensure your character rig uses standard bone names (Hips, Spine, LeftArm, etc.)
-   - Verify the armature is named "Armature" (or modify the script accordingly)
-
-2. **Export Armature Data** (optional)
+1. **Export Armature Data** (optional):
    ```python
-   # Run in Blender's Python console
    exec(open("armature_exporter.py").read())
    ```
 
-3. **Analyze Your Reference Image**
-   - Use the prompt from `analyse_image_and_get_pose_description_prompt.txt` with an AI vision model
-   - Provide your reference image to get a detailed pose description
+2. **Analyze Reference Image**: Use `analyse_image_and_get_pose_description_prompt.txt`
 
-4. **Generate Pose Rotations**
-   - Use the instructions in `chatgpt_prompt.txt` along with your pose description
-   - The AI will output precise rotation values for each bone
+3. **Generate Rotations**: Use `chatgpt_prompt.txt` for bone rotations
 
-5. **Apply the Pose**
-   - Copy the generated rotation values into the `POSE_DEGREES` dictionary in `apply_pose_template.py`
-   - Run the script in Blender to apply the pose to your character
+4. **Apply Pose**: Update `POSE_DEGREES` in `apply_pose_template.py` and run in Blender
 
-### Example Bone Rotation Format
+### Example Format
+
 ```python
 POSE_DEGREES = {
-    "Hips":   [0.0, 0.0, 5.0],     # Slight right hip rotation
-    "Spine":  [0.0, 0.0, -2.0],    # Counter-rotation
-    "Head":   [10.0, -5.0, 15.0],  # Head turned and tilted
-    "LeftArm": [45.0, -30.0, 20.0], # Arm raised and positioned
-    # ... more bones
+    "Hips":   [0.0, 0.0, 5.0],
+    "Spine":  [0.0, 0.0, -2.0],
+    "Head":   [10.0, -5.0, 15.0],
+    "LeftArm": [45.0, -30.0, 20.0],
 }
 ```
 
-## Rotation Conventions
+### Rotation Conventions
 
-The system uses specific rotation conventions for each bone type:
+- **Spine/Torso**: X=left/right lean, Y=back/forward lean, Z=twist
+- **Arms**: X=forward/back, Y=backward, Z=up
+- **Legs**: Hip mechanics vary by side
+- **Joints**: Y=hinge rotation (elbows, knees)
 
-### Spine/Torso (X=left, Y=up, Z=right)
-- X: Left lean (positive) / Right lean (negative)
-- Y: Backward lean (positive) / Forward lean (negative)  
-- Z: Right twist (positive) / Left twist (negative)
+See `chatgpt_prompt.txt` for complete conventions.
 
-### Arms
-- **Shoulders**: X=backward, Y=backward, Z=up
-- **Upper Arms**: X=forward, Y=backward, Z=up
-- **Forearms**: Y=unclenches (hinge joint)
-- **Hands**: Varies by side (see chatgpt_prompt.txt for details)
+### Configuration
 
-### Legs
-- **Upper Legs**: Varies by side for proper hip mechanics
-- **Lower Legs**: Y=forward (hinge joint)
-- **Feet**: Ankle rotations for realistic foot positioning
+- `SWAP_LR`: Flip left/right for mirrored references
+- `AUTO_HINGE`: Auto-detect hinge joints from constraints
+- `ARMATURE_NAME`: Change if armature name differs
 
-## Configuration Options
-
-### apply_pose_template.py Settings
-- `SWAP_LR`: Flip left/right if working with mirrored reference images
-- `AUTO_HINGE`: Automatically detect hinge joints from bone constraints
-- `ARMATURE_NAME`: Change if your armature has a different name
-
-## Tips and Best Practices
-
-1. **Reference Image Quality**
-   - Use clear, well-lit images with visible body positioning
-   - Avoid heavily cropped or partial body shots
-   - Front, 3/4, or profile views work best
-
-2. **Pose Descriptions**
-   - Be specific about weight distribution and subtle angles
-   - Include information about hidden or occluded limbs
-   - Note any unusual or extreme positions
-
-3. **Blender Setup**
-   - Ensure bone constraints are properly configured
-   - Test with simple poses before attempting complex ones
-   - Keep backup copies of your default character pose
+---
 
 ## Troubleshooting
 
-- **Bones not moving**: Check armature name and bone naming conventions
-- **Incorrect rotations**: Verify rotation order and axis conventions
-- **Constraint conflicts**: Temporarily disable IK or other constraints
-- **Extreme poses**: Start with subtle adjustments and build up gradually
+### Desktop App
+
+- **API key validation fails**: Check internet, verify key at [OpenAI Platform](https://platform.openai.com/api-keys)
+- **Prompt files not found**: Ensure txt files are in repository root
+- **Build errors**: Run `dotnet restore`
+
+### Python Scripts
+
+- **Bones not moving**: Check armature and bone naming
+- **Incorrect rotations**: Verify rotation order and axes
+- **Constraint conflicts**: Temporarily disable IK
+- **Extreme poses**: Start subtle, build gradually
+
+---
 
 ## Contributing
 
-This project is designed to be modular and extensible. Feel free to:
-- Improve the AI prompts for better pose analysis
-- Add support for additional bone types or rigs
-- Enhance the Blender integration scripts
-- Create presets for common pose types
+This project is modular and extensible. Feel free to:
+- Improve AI prompts for better analysis
+- Add support for additional rig types
+- Enhance Blender integration
+- Create presets for common poses
 
-## License
+## License & Terms of Use
 
-This project is open source. Please respect any licensing terms for AI models or Blender addons you use in conjunction with this tool.
+### License
+
+This project is provided as-is under an open source license. You are free to:
+- ✅ Use the software for personal or commercial projects
+- ✅ Modify and adapt the code to your needs
+- ✅ Distribute modified or unmodified versions
+- ✅ Use the generated poses in your creative works
+
+**Attribution Requirement:**
+
+If you use this project, any part of its code, or incorporate it into your own project, you **MUST**:
+- 📝 Credit the original author: **AlexRynas**
+- 🔗 Include a link to this repository: [https://github.com/AlexRynas/Image_To_Pose_Generator](https://github.com/AlexRynas/Image_To_Pose_Generator)
+- 📄 Mention the attribution in your project's documentation, README, credits screen, or appropriate location
+
+**Example Attribution:**
+```
+This project uses Image To Pose Generator by AlexRynas
+https://github.com/AlexRynas/Image_To_Pose_Generator
+```
+
+### Important Disclaimers
+
+**NO WARRANTIES OR GUARANTEES:**
+
+This software is provided **"AS IS"**, without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and noninfringement.
+
+- ⚠️ **No Accuracy Guarantees**: The AI-generated poses may not always be anatomically correct or match your expectations
+- ⚠️ **No API Cost Guarantees**: Cost estimates are approximate. Always verify actual charges on your OpenAI account
+- ⚠️ **No Availability Guarantees**: The software depends on external services (OpenAI API) which may change or become unavailable
+- ⚠️ **No Support Guarantees**: No obligation to provide updates, bug fixes, or technical support
+- ⚠️ **No Liability**: In no event shall the author be liable for any claim, damages, or other liability arising from the use of this software
+
+### User Responsibilities
+
+By using this software, you acknowledge that:
+
+1. **You provide your own API key**: You are responsible for:
+   - Obtaining and securing your OpenAI API key
+   - All costs incurred from API usage
+   - Compliance with OpenAI's terms of service and usage policies
+
+2. **You verify the output**: You are responsible for:
+   - Reviewing and validating all AI-generated content
+   - Ensuring poses are appropriate for your use case
+   - Making necessary adjustments to generated data
+
+3. **You respect third-party terms**: When using this software with:
+   - OpenAI services: Follow [OpenAI's Terms of Use](https://openai.com/policies/terms-of-use)
+   - Blender: Follow [Blender's GPL License](https://www.blender.org/about/license/)
+   - MPFB addon: Follow MPFB's licensing terms
+   - Any AI models or addons: Respect their respective licenses
+
+### Privacy & Data
+
+- **Your API key**: Stored in memory only during runtime; never logged or transmitted except to OpenAI
+- **Your images**: Sent directly to OpenAI for analysis; subject to [OpenAI's Privacy Policy](https://openai.com/policies/privacy-policy)
+- **Your data**: No telemetry, analytics, or data collection by this application
+- **Your responsibility**: Ensure you have rights to any images you analyze
+
+### Pricing Information
+
+All pricing information in this software is:
+- Provided for estimation purposes only
+- Based on publicly available rate cards at the time of implementation
+- Subject to change without notice by OpenAI
+- Not guaranteed to be accurate or current
+
+**Always verify current pricing** at the [official OpenAI Pricing page](https://openai.com/api/pricing).
+
+### Changes to Terms
+
+The author reserves the right to modify these terms, the software, or discontinue the project at any time without notice.
 
 ## Acknowledgments
 
 - Built for Blender 4.2+ and modern AI vision models
-- Designed with anatomical accuracy and biomechanical principles in mind
-- Inspired by the need for efficient pose reference workflows in 3D animation
+- Designed with anatomical accuracy and biomechanical principles
+- Inspired by efficient pose reference workflows in 3D animation
+- Uses the official [OpenAI .NET SDK](https://github.com/openai/openai-dotnet)
+- UI built with [Avalonia UI](https://avaloniaui.net/)

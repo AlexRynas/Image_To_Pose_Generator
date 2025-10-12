@@ -2,11 +2,14 @@
 
 This guide explains how to apply the generated bone rotations from the Image To Pose Generator to an MPFB GameEngine rig in Blender, and how to retarget them to a Cyberpunk 2077 character rig.
 
+> **Note:** This guide assumes you've already generated bone rotations using either the desktop application or Python scripts. See the main [README.md](../README.md) for generation instructions.
+
 ## Prerequisites
 
 - Blender 4.2 or later
 - MPFB addon installed
 - A character with an MPFB GameEngine rig
+- Generated bone rotation JSON from the Image To Pose Generator
 - (Optional) Cyberpunk 2077 character rig for retargeting
 
 ## Step 1: Apply Rotations to MPFB GameEngine Rig
