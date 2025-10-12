@@ -1,6 +1,7 @@
 using FluentAssertions;
 using ImageToPose.Core.Models;
 using ImageToPose.Core.Services;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace ImageToPose.Tests;
 
@@ -13,7 +14,7 @@ public class ModeSelectionIntegrationTests
     public async Task CompleteWorkflow_ShouldEstimateCostsCorrectly()
     {
         // Arrange
-        var estimator = new PriceEstimator();
+        var estimator = new PriceEstimator(NullLogger<PriceEstimator>.Instance);
         var assumedOutputTokens = 600; // Balanced mode
 
         // Act - Get rates
@@ -53,7 +54,7 @@ public class ModeSelectionIntegrationTests
     public async Task PricingJson_ShouldContainAllRequiredModels()
     {
         // Arrange
-        var estimator = new PriceEstimator();
+        var estimator = new PriceEstimator(NullLogger<PriceEstimator>.Instance);
         var requiredModels = new[] { OpenAIModel.Gpt41Nano, OpenAIModel.Gpt41Mini, OpenAIModel.Gpt41, OpenAIModel.O4Mini };
 
         // Act & Assert
@@ -106,7 +107,7 @@ public class ModeSelectionIntegrationTests
     public async Task EstimateWorkflow_DifferentModes_ShouldUseCorrectOutputTokens(OperatingMode mode, int expectedOutput)
     {
         // Arrange
-        var estimator = new PriceEstimator();
+        var estimator = new PriceEstimator(NullLogger<PriceEstimator>.Instance);
     var rates = await estimator.GetRatesAsync(OpenAIModel.Gpt41Mini.GetModelId());
         rates.Should().NotBeNull();
 

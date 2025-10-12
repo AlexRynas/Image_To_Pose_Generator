@@ -1,5 +1,6 @@
 using FluentAssertions;
 using ImageToPose.Core.Services;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace ImageToPose.Tests;
@@ -10,11 +11,11 @@ public class PoseRigParsingTests
     public void ParsePoseRig_WithValidPythonDict_ShouldParseBoneRotations()
     {
         // Arrange
-        var settingsService = new SettingsService();
+        var settingsService = new SettingsService(NullLogger<SettingsService>.Instance);
         var promptLoader = new MockPromptLoader();
-        var priceEstimator = new PriceEstimator();
-        var errorHandler = new OpenAIErrorHandler();
-        var openAIService = new OpenAIService(settingsService, promptLoader, priceEstimator, errorHandler);
+        var priceEstimator = new PriceEstimator(NullLogger<PriceEstimator>.Instance);
+        var errorHandler = new OpenAIErrorHandler(NullLogger<OpenAIErrorHandler>.Instance);
+        var openAIService = new OpenAIService(NullLogger<OpenAIService>.Instance, settingsService, promptLoader, priceEstimator, errorHandler);
         
         var llmResponse = @"```python
 POSE_DEGREES = {
@@ -42,11 +43,11 @@ POSE_DEGREES = {
     public void ParsePoseRig_WithoutCodeFences_ShouldParseBoneRotations()
     {
         // Arrange
-        var settingsService = new SettingsService();
+        var settingsService = new SettingsService(NullLogger<SettingsService>.Instance);
         var promptLoader = new MockPromptLoader();
-        var priceEstimator = new PriceEstimator();
-        var errorHandler = new OpenAIErrorHandler();
-        var openAIService = new OpenAIService(settingsService, promptLoader, priceEstimator, errorHandler);
+        var priceEstimator = new PriceEstimator(NullLogger<PriceEstimator>.Instance);
+        var errorHandler = new OpenAIErrorHandler(NullLogger<OpenAIErrorHandler>.Instance);
+        var openAIService = new OpenAIService(NullLogger<OpenAIService>.Instance, settingsService, promptLoader, priceEstimator, errorHandler);
         
         var llmResponse = @"POSE_DEGREES = {
     ""upperarm_l"": [45.0, -30.0, 20.0],

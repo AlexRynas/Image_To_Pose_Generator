@@ -3,11 +3,13 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ImageToPose.Core.Models;
 using ImageToPose.Core.Services;
+using Microsoft.Extensions.Logging;
 
 namespace ImageToPose.Desktop.ViewModels;
 
 public partial class ApiKeyViewModel : ViewModelBase
 {
+    private readonly ILogger<ApiKeyViewModel>? _logger;
     private readonly WizardViewModel _wizard;
     private readonly ISettingsService _settingsService;
     private readonly IOpenAIService _openAIService;
@@ -31,27 +33,36 @@ public partial class ApiKeyViewModel : ViewModelBase
         WizardViewModel wizard,
         ISettingsService settingsService,
         IOpenAIService openAIService,
-        IOpenAIErrorHandler errorHandler)
+        IOpenAIErrorHandler errorHandler,
+        ILogger<ApiKeyViewModel>? logger = null)
     {
+        _logger = logger;
         _wizard = wizard;
         _settingsService = settingsService;
         _openAIService = openAIService;
         _errorHandler = errorHandler;
+        
+        ApiKeyViewModelLogs.ViewModelInitialized(_logger);
     }
 
     [RelayCommand]
     private async Task ValidateAndContinue()
     {
+        using var _ = _logger?.BeginScope(new Dictionary<string, object> { ["Operation"] = "ValidateApiKey" });
+        
         if (string.IsNullOrWhiteSpace(ApiKey))
         {
             ErrorMessage = "Please enter an API key";
             IsValid = false;
+            ApiKeyViewModelLogs.EmptyApiKey(_logger);
             return;
         }
 
         IsValidating = true;
         ErrorMessage = string.Empty;
         IsValid = false;
+        
+        ApiKeyViewModelLogs.ValidatingApiKey(_logger);
 
         try
         {
@@ -63,6 +74,8 @@ public partial class ApiKeyViewModel : ViewModelBase
                 _settingsService.SetOpenAIOptions(new OpenAIOptions { ApiKey = ApiKey });
                 IsValid = true;
                 
+                ApiKeyViewModelLogs.ApiKeyValidatedSuccessfully(_logger);
+                
                 // Trigger model resolution for the InputViewModel's ModeVM
                 await _wizard.InputViewModel.ModeVM.ResolveModelAndRatesAsync();
                 
@@ -73,6 +86,7 @@ public partial class ApiKeyViewModel : ViewModelBase
             {
                 ErrorMessage = "Invalid API key. Please check and try again.";
                 IsValid = false;
+                ApiKeyViewModelLogs.ApiKeyInvalid(_logger);
             }
         }
         catch (Exception ex)
@@ -80,6 +94,7 @@ public partial class ApiKeyViewModel : ViewModelBase
             var info = _errorHandler.Translate(ex);
             ErrorMessage = info.Message;
             IsValid = false;
+            ApiKeyViewModelLogs.ApiKeyValidationFailed(_logger, ex);
         }
         finally
         {
@@ -90,6 +105,8 @@ public partial class ApiKeyViewModel : ViewModelBase
     [RelayCommand]
     private void OpenApiKeyLink()
     {
+        ApiKeyViewModelLogs.OpeningApiKeyLink(_logger);
+        
         try
         {
             Process.Start(new ProcessStartInfo
@@ -98,11 +115,39 @@ public partial class ApiKeyViewModel : ViewModelBase
                 UseShellExecute = true
             });
         }
-        catch
+        catch (Exception ex)
         {
+            ApiKeyViewModelLogs.OpenLinkFailed(_logger, ex);
             // Ignore errors opening browser
         }
     }
 
     public bool CanValidateAndContinue => !string.IsNullOrWhiteSpace(ApiKey) && !IsValidating;
+}
+
+internal static partial class ApiKeyViewModelLogs
+{
+    [LoggerMessage(Level = LogLevel.Debug, Message = "ApiKeyViewModel initialized")]
+    public static partial void ViewModelInitialized(ILogger? logger);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Validating OpenAI API key")]
+    public static partial void ValidatingApiKey(ILogger? logger);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "API key is empty")]
+    public static partial void EmptyApiKey(ILogger? logger);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "API key validated successfully")]
+    public static partial void ApiKeyValidatedSuccessfully(ILogger? logger);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "API key validation returned invalid")]
+    public static partial void ApiKeyInvalid(ILogger? logger);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "API key validation failed with exception")]
+    public static partial void ApiKeyValidationFailed(ILogger? logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Opening OpenAI API keys link")]
+    public static partial void OpeningApiKeyLink(ILogger? logger);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to open API key link in browser")]
+    public static partial void OpenLinkFailed(ILogger? logger, Exception exception);
 }

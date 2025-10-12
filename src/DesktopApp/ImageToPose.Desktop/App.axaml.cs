@@ -8,6 +8,8 @@ using ImageToPose.Desktop.Views;
 using ImageToPose.Desktop.Services;
 using ImageToPose.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Serilog;
 
 namespace ImageToPose.Desktop;
 
@@ -20,17 +22,16 @@ public partial class App : Application
     {
         AvaloniaXamlLoader.Load(this);
         
-        // Initialize theme service before DI
-        ThemeService = new ThemeService(this);
-        
         // Configure services
         var services = new ServiceCollection();
-        ConfigureServices(services);
-        Services = services.BuildServiceProvider();
-    }
+        
+        // Logging first
+        services.AddLogging(builder =>
+        {
+            builder.ClearProviders();
+            builder.AddSerilog(dispose: true);
+        });
 
-    private void ConfigureServices(IServiceCollection services)
-    {
         // Core services
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<IPromptLoader, PromptLoader>();
@@ -40,10 +41,23 @@ public partial class App : Application
         
         // Desktop services
         services.AddSingleton<IFileService, FileService>();
+        
+        // Build once to get logger
+        var tempProvider = services.BuildServiceProvider();
+        var loggerFactory = tempProvider.GetRequiredService<ILoggerFactory>();
+        var themeLogger = loggerFactory.CreateLogger<ThemeService>();
+        
+        // Initialize theme service with logger
+        ThemeService = new ThemeService(this, themeLogger);
+        
+        // Add theme service to DI
         services.AddSingleton<IThemeService>(ThemeService);
         
         // ViewModels
         services.AddTransient<WizardViewModel>();
+        
+        // Build final service provider
+        Services = services.BuildServiceProvider();
     }
 
     public override void OnFrameworkInitializationCompleted()

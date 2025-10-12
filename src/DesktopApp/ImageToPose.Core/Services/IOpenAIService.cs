@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using ImageToPose.Core.Models;
 using OpenAI;
 using OpenAI.Chat;
+using Microsoft.Extensions.Logging;
 
 namespace ImageToPose.Core.Services;
 
@@ -23,6 +24,7 @@ public interface IOpenAIService
 
 public class OpenAIService : IOpenAIService
 {
+    private readonly ILogger<OpenAIService> _logger;
     private readonly ISettingsService _settingsService;
     private readonly IPromptLoader _promptLoader;
     private readonly IPriceEstimator _priceEstimator;
@@ -34,17 +36,32 @@ public class OpenAIService : IOpenAIService
     public OperatingMode SelectedMode { get; set; } = OperatingMode.Balanced;
     public string? ResolvedModelId => _chosenModel;
 
-    public OpenAIService(ISettingsService settingsService, IPromptLoader promptLoader, IPriceEstimator priceEstimator, IOpenAIErrorHandler errorHandler)
+    public OpenAIService(
+        ILogger<OpenAIService> logger,
+        ISettingsService settingsService, 
+        IPromptLoader promptLoader, 
+        IPriceEstimator priceEstimator, 
+        IOpenAIErrorHandler errorHandler)
     {
+        _logger = logger;
         _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
         _promptLoader = promptLoader ?? throw new ArgumentNullException(nameof(promptLoader));
         _priceEstimator = priceEstimator ?? throw new ArgumentNullException(nameof(priceEstimator));
         _errorHandler = errorHandler ?? throw new ArgumentNullException(nameof(errorHandler));
+        
+        OpenAIServiceLogs.ServiceInitialized(_logger);
     }
 
     public async Task<bool> ValidateApiKeyAsync(string apiKey, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(apiKey)) return false;
+        using var _ = _logger.BeginScope(new Dictionary<string, object> { ["Operation"] = "ValidateApiKey" });
+        OpenAIServiceLogs.ValidatingApiKey(_logger);
+        
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            OpenAIServiceLogs.ApiKeyEmpty(_logger);
+            return false;
+        }
 
         try
         {
@@ -52,6 +69,8 @@ public class OpenAIService : IOpenAIService
             var modelClient = root.GetOpenAIModelClient();
             var modelsPage = await modelClient.GetModelsAsync(cancellationToken);
             var available = modelsPage.Value.Select(m => m.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            OpenAIServiceLogs.ModelsListRetrieved(_logger, available.Count);
 
             // Try resolve according to selected mode
             var picked = await PickBestModelAsync(root, available, overrideModelId: null, cancellationToken);
@@ -61,22 +80,39 @@ public class OpenAIService : IOpenAIService
             if (picked is not null)
             {
                 _chosenModel = picked; // cache for the session
+                OpenAIServiceLogs.ApiKeyValidated(_logger, picked);
+            }
+            else
+            {
+                OpenAIServiceLogs.ApiKeyValidatedNoModel(_logger);
             }
             
             // Key is valid if we can list models, even if none match the current mode
             return available.Count > 0;
         }
-        catch
+        catch (Exception ex)
         {
+            OpenAIServiceLogs.ApiKeyValidationFailed(_logger, ex);
             return false;
         }
     }
 
     public async Task<string> ResolveModelAsync(string? overrideModelId = null, CancellationToken cancellationToken = default)
     {
+        using var _ = _logger.BeginScope(new Dictionary<string, object> 
+        { 
+            ["Operation"] = "ResolveModel",
+            ["Mode"] = SelectedMode.ToString()
+        });
+        
+        OpenAIServiceLogs.ResolvingModel(_logger, SelectedMode.ToString());
+        
         var options = _settingsService.GetOpenAIOptions();
         if (string.IsNullOrWhiteSpace(options.ApiKey))
+        {
+            OpenAIServiceLogs.ApiKeyNotSet(_logger);
             throw new InvalidOperationException("OpenAI API key is not set");
+        }
 
         // Check if cached model is still valid for the current mode
         if (!string.IsNullOrWhiteSpace(_chosenModel) && string.IsNullOrWhiteSpace(overrideModelId))
@@ -86,9 +122,11 @@ public class OpenAIService : IOpenAIService
                 && priority.Contains(cachedModel))
             {
                 // Cached model is appropriate for current mode, reuse it
+                OpenAIServiceLogs.UsingCachedModel(_logger, _chosenModel!);
                 return _chosenModel!;
             }
             // Cached model is not in current mode's priority list, invalidate cache
+            OpenAIServiceLogs.InvalidatingCachedModel(_logger, _chosenModel!);
             _chosenModel = null;
         }
 
@@ -105,6 +143,7 @@ public class OpenAIService : IOpenAIService
             var requiredModels = string.Join(" or ", priority.Select(m => m.GetModelId()));
             var modeName = SelectedMode.ToString();
             
+            OpenAIServiceLogs.NoCompatibleModel(_logger, modeName, requiredModels);
             throw new InvalidOperationException(
                 $"No compatible models available for {modeName} mode. " +
                 $"Your API key needs access to: {requiredModels}. " +
@@ -112,26 +151,42 @@ public class OpenAIService : IOpenAIService
         }
         
         _chosenModel = picked;
+        OpenAIServiceLogs.ModelResolved(_logger, picked);
         return picked;
     }
 
     public async Task<ExtendedPose> AnalyzePoseAsync(PoseInput input, CancellationToken cancellationToken = default)
     {
+        using var _ = _logger.BeginScope(new Dictionary<string, object>
+        {
+            ["Operation"] = "AnalyzePose",
+            ["ImagePath"] = input?.ImagePath ?? "null"
+        });
+        
+        OpenAIServiceLogs.AnalyzingPose(_logger, input?.ImagePath ?? "null");
+        
         if (input is null) throw new ArgumentNullException(nameof(input));
         if (string.IsNullOrWhiteSpace(input.ImagePath))
             throw new ArgumentException("Image path cannot be empty", nameof(input.ImagePath));
 
         if (!File.Exists(input.ImagePath))
+        {
+            OpenAIServiceLogs.ImageFileNotFound(_logger, input.ImagePath);
             throw new FileNotFoundException("Image file not found", input.ImagePath);
+        }
 
         var options = _settingsService.GetOpenAIOptions();
         if (string.IsNullOrWhiteSpace(options.ApiKey))
+        {
+            OpenAIServiceLogs.ApiKeyNotSet(_logger);
             throw new InvalidOperationException("OpenAI API key is not set");
+        }
 
         var client = new OpenAIClient(options.ApiKey);
 
         // Resolve a model that actually works for this key (vision required)
         var model = await EnsureModelAsync(client, cancellationToken);
+        OpenAIServiceLogs.UsingModel(_logger, model);
 
         // Load prompt #1
         var promptTemplate = await _promptLoader.LoadAnalyzeImagePromptAsync(cancellationToken);
@@ -162,25 +217,37 @@ public class OpenAIService : IOpenAIService
             MaxOutputTokenCount = 1000
         };
 
+        OpenAIServiceLogs.SendingVisionRequest(_logger, model);
         var response = await chat.CompleteChatAsync(messages, chatOptions, cancellationToken);
         var content = response?.Value?.Content?.FirstOrDefault()?.Text ?? string.Empty;
         if (string.IsNullOrWhiteSpace(content))
+        {
+            OpenAIServiceLogs.EmptyResponse(_logger);
             throw new InvalidOperationException("OpenAI returned an empty response");
+        }
 
+        OpenAIServiceLogs.PoseAnalysisComplete(_logger, content.Length);
         return new ExtendedPose { Text = content.Trim() };
     }
 
     public async Task<PoseRig> GenerateRigAsync(string extendedPoseText, CancellationToken cancellationToken = default)
     {
+        using var _ = _logger.BeginScope(new Dictionary<string, object> { ["Operation"] = "GenerateRig" });
+        OpenAIServiceLogs.GeneratingRig(_logger, extendedPoseText.Length);
+        
         if (string.IsNullOrWhiteSpace(extendedPoseText))
             throw new ArgumentException("Extended pose text cannot be empty", nameof(extendedPoseText));
 
         var options = _settingsService.GetOpenAIOptions();
         if (string.IsNullOrWhiteSpace(options.ApiKey))
+        {
+            OpenAIServiceLogs.ApiKeyNotSet(_logger);
             throw new InvalidOperationException("OpenAI API key is not set");
+        }
 
         var client = new OpenAIClient(options.ApiKey);
         var model = await EnsureModelAsync(client, cancellationToken);
+        OpenAIServiceLogs.UsingModel(_logger, model);
 
         var promptTemplate = await _promptLoader.LoadGenerateRigPromptAsync(cancellationToken);
 
@@ -202,12 +269,19 @@ public class OpenAIService : IOpenAIService
             MaxOutputTokenCount = 2000
         };
 
+        OpenAIServiceLogs.SendingGenerateRequest(_logger, model);
         var response = await chat.CompleteChatAsync(messages, chatOptions, cancellationToken);
         var content = response?.Value?.Content?.FirstOrDefault()?.Text ?? string.Empty;
         if (string.IsNullOrWhiteSpace(content))
+        {
+            OpenAIServiceLogs.EmptyResponse(_logger);
             throw new InvalidOperationException("OpenAI returned an empty response");
+        }
 
-        return ParsePoseRig(content);
+        OpenAIServiceLogs.ParsingPoseRig(_logger);
+        var rig = ParsePoseRig(content);
+        OpenAIServiceLogs.RigGenerated(_logger, rig.Bones.Count);
+        return rig;
     }
 
     public async Task<PricingModelRates?> GetResolvedModelRatesAsync(CancellationToken cancellationToken = default)
@@ -371,4 +445,76 @@ public class OpenAIService : IOpenAIService
 
         return new PoseRig { Bones = bones };
     }
+}
+
+internal static partial class OpenAIServiceLogs
+{
+    [LoggerMessage(Level = LogLevel.Debug, Message = "OpenAIService initialized")]
+    public static partial void ServiceInitialized(ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Validating OpenAI API key")]
+    public static partial void ValidatingApiKey(ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "API key is empty")]
+    public static partial void ApiKeyEmpty(ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Retrieved {Count} models from OpenAI")]
+    public static partial void ModelsListRetrieved(ILogger logger, int count);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "API key validated successfully, selected model: {Model}")]
+    public static partial void ApiKeyValidated(ILogger logger, string model);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "API key validated successfully, no model matched current mode")]
+    public static partial void ApiKeyValidatedNoModel(ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "API key validation failed")]
+    public static partial void ApiKeyValidationFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Resolving model for mode: {Mode}")]
+    public static partial void ResolvingModel(ILogger logger, string mode);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "OpenAI API key is not set")]
+    public static partial void ApiKeyNotSet(ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Using cached model: {Model}")]
+    public static partial void UsingCachedModel(ILogger logger, string model);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Invalidating cached model: {Model}")]
+    public static partial void InvalidatingCachedModel(ILogger logger, string model);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "No compatible model found for mode: {Mode}, required: {RequiredModels}")]
+    public static partial void NoCompatibleModel(ILogger logger, string mode, string requiredModels);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Model resolved: {Model}")]
+    public static partial void ModelResolved(ILogger logger, string model);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Analyzing pose from image: {ImagePath}")]
+    public static partial void AnalyzingPose(ILogger logger, string imagePath);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Image file not found: {ImagePath}")]
+    public static partial void ImageFileNotFound(ILogger logger, string imagePath);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Using model: {Model}")]
+    public static partial void UsingModel(ILogger logger, string model);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Sending vision request to OpenAI model: {Model}")]
+    public static partial void SendingVisionRequest(ILogger logger, string model);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "OpenAI returned empty response")]
+    public static partial void EmptyResponse(ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Pose analysis complete, response length: {Length}")]
+    public static partial void PoseAnalysisComplete(ILogger logger, int length);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Generating rig from extended pose text, length: {Length}")]
+    public static partial void GeneratingRig(ILogger logger, int length);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Sending generate rig request to OpenAI model: {Model}")]
+    public static partial void SendingGenerateRequest(ILogger logger, string model);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Parsing pose rig from OpenAI response")]
+    public static partial void ParsingPoseRig(ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Rig generated successfully with {BoneCount} bones")]
+    public static partial void RigGenerated(ILogger logger, int boneCount);
 }

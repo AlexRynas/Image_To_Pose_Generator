@@ -2,6 +2,7 @@ using ImageToPose.Core.Models;
 using SharpToken;
 using System.Text.Json;
 using SixLabors.ImageSharp;
+using Microsoft.Extensions.Logging;
 
 namespace ImageToPose.Core.Services;
 
@@ -14,12 +15,14 @@ public interface IPriceEstimator
 
 public class PriceEstimator : IPriceEstimator
 {
+    private readonly ILogger<PriceEstimator> _logger;
     private readonly Lazy<GptEncoding?> _encoding;
     private readonly string _configDir;
     private readonly string _pricingPath;
 
-    public PriceEstimator()
+    public PriceEstimator(ILogger<PriceEstimator> logger)
     {
+        _logger = logger;
         _encoding = new Lazy<GptEncoding?>(() =>
         {
             try { return GptEncoding.GetEncoding("cl100k_base"); } catch { return null; }
@@ -29,21 +32,30 @@ public class PriceEstimator : IPriceEstimator
         var baseDir = AppDomain.CurrentDomain.BaseDirectory;
         _configDir = Path.Combine(baseDir, "config");
         _pricingPath = Path.Combine(_configDir, "pricing.json");
+        
+        PriceEstimatorLogs.ServiceInitialized(_logger, _pricingPath);
     }
 
     public async Task<PricingModelRates?> GetRatesAsync(string modelId, CancellationToken ct = default)
     {
+        using var _ = _logger.BeginScope(new Dictionary<string, object> { ["ModelId"] = modelId });
+        
         var dict = await EnsureAndLoadPricingAsync(ct);
         if (dict.TryGetValue(modelId, out var rates))
         {
             rates.ModelId = modelId;
+            PriceEstimatorLogs.RatesFound(_logger, modelId, rates.InputPerMillion, rates.OutputPerMillion);
             return rates;
         }
+        
+        PriceEstimatorLogs.RatesNotFound(_logger, modelId);
         return null;
     }
 
     public async Task<StepCostEstimate> EstimateVisionAsync(PricingModelRates rates, string imagePath, string combinedPrompt, CancellationToken ct = default)
     {
+        using var _ = _logger.BeginScope(new Dictionary<string, object> { ["ModelId"] = rates.ModelId, ["Operation"] = "Vision" });
+        
         // image tokens + text tokens
         var (tiles, imageTokens) = await EstimateImageTokensAsync(imagePath, ct);
         int textTokens = CountTextTokens(combinedPrompt);
@@ -52,13 +64,18 @@ public class PriceEstimator : IPriceEstimator
         // Assume Balanced output if we don't have external info; caller can pass assumed separately via EstimateTextAsync
         int assumedOutputTokens = 600; // default
 
-        return ComputeCosts(rates, inputTokens, assumedOutputTokens);
+        var estimate = ComputeCosts(rates, inputTokens, assumedOutputTokens);
+        PriceEstimatorLogs.VisionEstimateComputed(_logger, tiles, imageTokens, textTokens, estimate.TotalUsd);
+        return estimate;
     }
 
     public Task<StepCostEstimate> EstimateTextAsync(PricingModelRates rates, string inputText, int assumedOutputTokens, CancellationToken ct = default)
     {
+        using var _ = _logger.BeginScope(new Dictionary<string, object> { ["ModelId"] = rates.ModelId, ["Operation"] = "Text" });
+        
         int inputTokens = CountTextTokens(inputText);
         var estimate = ComputeCosts(rates, inputTokens, assumedOutputTokens);
+        PriceEstimatorLogs.TextEstimateComputed(_logger, inputTokens, assumedOutputTokens, estimate.TotalUsd);
         return Task.FromResult(estimate);
     }
 
@@ -160,4 +177,22 @@ public class PriceEstimator : IPriceEstimator
         int total = baseTokens + tileTokens;
         return (tiles, total);
     }
+}
+
+internal static partial class PriceEstimatorLogs
+{
+    [LoggerMessage(Level = LogLevel.Debug, Message = "PriceEstimator initialized, pricing file: {PricingPath}")]
+    public static partial void ServiceInitialized(ILogger logger, string pricingPath);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Pricing rates found for model {ModelId}: Input=${InputPerMillion}/M, Output=${OutputPerMillion}/M")]
+    public static partial void RatesFound(ILogger logger, string modelId, decimal inputPerMillion, decimal outputPerMillion);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Pricing rates not found for model {ModelId}")]
+    public static partial void RatesNotFound(ILogger logger, string modelId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Vision estimate: {Tiles} tiles, {ImageTokens} image tokens, {TextTokens} text tokens, ${TotalCost:F6} USD")]
+    public static partial void VisionEstimateComputed(ILogger logger, int tiles, int imageTokens, int textTokens, decimal totalCost);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Text estimate: {InputTokens} input tokens, {OutputTokens} output tokens, ${TotalCost:F6} USD")]
+    public static partial void TextEstimateComputed(ILogger logger, int inputTokens, int outputTokens, decimal totalCost);
 }

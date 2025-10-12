@@ -6,11 +6,13 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ImageToPose.Core.Models;
 using ImageToPose.Core.Services;
+using Microsoft.Extensions.Logging;
 
 namespace ImageToPose.Desktop.ViewModels;
 
 public partial class ModeSelectionViewModel : ViewModelBase
 {
+    private readonly ILogger<ModeSelectionViewModel>? _logger;
     private readonly IOpenAIService _openAIService;
     private readonly IPriceEstimator _priceEstimator;
     private readonly IOpenAIErrorHandler _errorHandler;
@@ -46,18 +48,23 @@ public partial class ModeSelectionViewModel : ViewModelBase
     [ObservableProperty]
     private string? _selectedModelId;
 
-    public ModeSelectionViewModel(IOpenAIService openAIService, IPriceEstimator priceEstimator, IOpenAIErrorHandler errorHandler)
+    public ModeSelectionViewModel(IOpenAIService openAIService, IPriceEstimator priceEstimator, IOpenAIErrorHandler errorHandler, ILogger<ModeSelectionViewModel>? logger = null)
     {
+        _logger = logger;
         _openAIService = openAIService;
         _priceEstimator = priceEstimator;
         _errorHandler = errorHandler;
         _openAIService.SelectedMode = _mode;
         SetSelectedModelIdSilently(AvailableModelIds.FirstOrDefault());
+        
+        ModeSelectionViewModelLogs.ViewModelInitialized(_logger, _mode.ToString());
         _ = ResolveModelAndRatesAsync(SelectedModelId);
     }
 
     partial void OnModeChanged(OperatingMode value)
     {
+        ModeSelectionViewModelLogs.ModeChanged(_logger, value.ToString());
+        
         _openAIService.SelectedMode = value;
         ModeDescription = ModeModelMap.GetModeDescription(value);
         AvailableModelIds = ModeModelMap.GetPriorityList(value)
@@ -68,6 +75,7 @@ public partial class ModeSelectionViewModel : ViewModelBase
         if (!ContainsModelId(SelectedModelId))
         {
             var defaultModelId = AvailableModelIds.FirstOrDefault();
+            ModeSelectionViewModelLogs.ModelNotAvailableInMode(_logger, SelectedModelId ?? "null", value.ToString(), defaultModelId ?? "null");
             SetSelectedModelIdSilently(defaultModelId);
         }
 
@@ -91,6 +99,15 @@ public partial class ModeSelectionViewModel : ViewModelBase
 
     public async Task RecomputeEstimates(string? imagePath = null, string? roughText = null)
     {
+        using var _ = _logger?.BeginScope(new Dictionary<string, object> 
+        { 
+            ["Operation"] = "RecomputeEstimates",
+            ["Mode"] = Mode.ToString(),
+            ["HasImage"] = !string.IsNullOrWhiteSpace(imagePath)
+        });
+        
+        ModeSelectionViewModelLogs.RecomputingEstimates(_logger, Mode.ToString(), !string.IsNullOrWhiteSpace(imagePath));
+        
         try
         {
             ErrorMessage = string.Empty;
@@ -108,6 +125,7 @@ public partial class ModeSelectionViewModel : ViewModelBase
             var rates = await _openAIService.GetResolvedModelRatesAsync();
             if (rates is null)
             {
+                ModeSelectionViewModelLogs.NoRatesAvailable(_logger);
                 VisionEstimate = new StepCostEstimate();
                 TextEstimate = new StepCostEstimate();
                 return;
@@ -135,21 +153,35 @@ public partial class ModeSelectionViewModel : ViewModelBase
 
             // Step 2: Text
             TextEstimate = await _priceEstimator.EstimateTextAsync(rates, roughText ?? string.Empty, assumedOut);
+            
+            ModeSelectionViewModelLogs.EstimatesComputed(_logger, VisionEstimate.TotalUsd, TextEstimate.TotalUsd);
         }
         catch (Exception ex)
         {
             var info = _errorHandler.Translate(ex);
             ErrorMessage = info.Message;
+            ModeSelectionViewModelLogs.EstimatesFailed(_logger, ex);
         }
     }
 
     public async Task ResolveModelAndRatesAsync(string? preferredModelId = null)
     {
+        using var scope = _logger?.BeginScope(new Dictionary<string, object> 
+        { 
+            ["Operation"] = "ResolveModel",
+            ["PreferredModel"] = preferredModelId ?? "default"
+        });
+        
+        ModeSelectionViewModelLogs.ResolvingModel(_logger, preferredModelId ?? "default");
+        
         try
         {
             ErrorMessage = string.Empty;
             var modelId = await _openAIService.ResolveModelAsync(preferredModelId);
             ResolvedModelId = modelId;
+            
+            ModeSelectionViewModelLogs.ModelResolved(_logger, modelId);
+            
             if (ContainsModelId(modelId))
             {
                 SetSelectedModelIdSilently(modelId);
@@ -161,6 +193,7 @@ public partial class ModeSelectionViewModel : ViewModelBase
             ResolvedModelId = string.Empty;
             var info = _errorHandler.Translate(ex);
             ErrorMessage = info.Message;
+            ModeSelectionViewModelLogs.ModelResolutionFailed(_logger, ex);
         }
     }
 
@@ -202,4 +235,37 @@ public partial class ModeSelectionViewModel : ViewModelBase
         return AvailableModelIds.Any(id => string.Equals(id, modelId, StringComparison.OrdinalIgnoreCase));
     }
 
+}
+
+internal static partial class ModeSelectionViewModelLogs
+{
+    [LoggerMessage(Level = LogLevel.Debug, Message = "ModeSelectionViewModel initialized with mode: {Mode}")]
+    public static partial void ViewModelInitialized(ILogger? logger, string mode);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Operating mode changed to: {Mode}")]
+    public static partial void ModeChanged(ILogger? logger, string mode);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Selected model {PreviousModel} not available in mode {Mode}, switching to {NewModel}")]
+    public static partial void ModelNotAvailableInMode(ILogger? logger, string previousModel, string mode, string newModel);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Recomputing estimates for mode {Mode}, hasImage: {HasImage}")]
+    public static partial void RecomputingEstimates(ILogger? logger, string mode, bool hasImage);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "No pricing rates available for estimate computation")]
+    public static partial void NoRatesAvailable(ILogger? logger);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Estimates computed - Vision: ${VisionCost:F6}, Text: ${TextCost:F6}")]
+    public static partial void EstimatesComputed(ILogger? logger, decimal visionCost, decimal textCost);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to compute estimates")]
+    public static partial void EstimatesFailed(ILogger? logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Resolving model, preferred: {PreferredModel}")]
+    public static partial void ResolvingModel(ILogger? logger, string preferredModel);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Model resolved: {ModelId}")]
+    public static partial void ModelResolved(ILogger? logger, string modelId);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Model resolution failed")]
+    public static partial void ModelResolutionFailed(ILogger? logger, Exception exception);
 }

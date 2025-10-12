@@ -2,6 +2,7 @@ using System.Linq;
 using FluentAssertions;
 using ImageToPose.Core.Models;
 using ImageToPose.Core.Services;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace ImageToPose.Tests;
@@ -12,7 +13,7 @@ public class PricingEstimatorTests
     public async Task GetRatesAsync_WithValidModelId_ShouldReturnRates()
     {
         // Arrange
-        var estimator = new PriceEstimator();
+        var estimator = new PriceEstimator(NullLogger<PriceEstimator>.Instance);
 
         // Act
     var rates = await estimator.GetRatesAsync(OpenAIModel.Gpt41Mini.GetModelId());
@@ -28,7 +29,7 @@ public class PricingEstimatorTests
     public async Task GetRatesAsync_WithInvalidModelId_ShouldReturnNull()
     {
         // Arrange
-        var estimator = new PriceEstimator();
+        var estimator = new PriceEstimator(NullLogger<PriceEstimator>.Instance);
 
         // Act
         var rates = await estimator.GetRatesAsync("invalid-model");
@@ -107,7 +108,7 @@ public class PricingEstimatorTests
     public async Task EstimateTextAsync_ShouldReturnValidEstimate()
     {
         // Arrange
-        var estimator = new PriceEstimator();
+        var estimator = new PriceEstimator(NullLogger<PriceEstimator>.Instance);
         var rates = new PricingModelRates
         {
             ModelId = "test-model",
