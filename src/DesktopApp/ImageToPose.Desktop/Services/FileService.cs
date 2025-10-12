@@ -2,9 +2,17 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
-using ImageToPose.Core.Services;
 
 namespace ImageToPose.Desktop.Services;
+
+/// <summary>
+/// Service abstraction for file operations (dialogs, save, etc.)
+/// </summary>
+public interface IFileService
+{
+    Task<string?> OpenImageFileAsync();
+    Task SaveJsonFileAsync(string json, string defaultFileName);
+}
 
 /// <summary>
 /// Avalonia implementation of file service
@@ -18,7 +26,7 @@ public class FileService : IFileService
             return null;
 
         var storageProvider = window.StorageProvider;
-        
+
         var files = await storageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
             Title = "Select an image",
@@ -42,7 +50,7 @@ public class FileService : IFileService
             return;
 
         var storageProvider = window.StorageProvider;
-        
+
         var file = await storageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
             Title = "Save JSON file",

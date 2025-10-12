@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ImageToPose.Core.Services;
 using ImageToPose.Core.Models;
+using ImageToPose.Desktop.Services;
 
 namespace ImageToPose.Desktop.ViewModels;
 
