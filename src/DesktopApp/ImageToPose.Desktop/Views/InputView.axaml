@@ -141,15 +141,38 @@
 								<Run Text="Facing"/>
 								<Run Text=" *" Foreground="{DynamicResource Brush.Danger}"/>
 							</TextBlock>
-							<TextBlock Text="?"
-                                       FontWeight="Bold"
-                                       Foreground="{DynamicResource Brush.Primary}"
-                                       Cursor="Help"
-                                       ToolTip.Tip="Options: frontal, left, left-profile, prone, right-profile, supine, up-stairs, ¾ left, ¾ right, or brief context. Use 'uncertain (likely left)' when unsure."/>
+                            <ToggleButton x:Name="FacingHelpButton"
+                                    Content="?" 
+                                    FontWeight="Bold" 
+                                    Padding="0"
+                                    Width="18"
+                                    Height="18"
+                                    VerticalAlignment="Center"
+                                    HorizontalContentAlignment="Center"
+                                    VerticalContentAlignment="Center"
+                                    Background="{DynamicResource Brush.Primary}"
+                                    Foreground="White"
+                                    CornerRadius="9"
+                                    FontSize="11"
+                                    Cursor="Hand"/>
+							<Popup PlacementTarget="{Binding #FacingHelpButton}"
+                                   IsOpen="{Binding #FacingHelpButton.IsChecked, Mode=TwoWay}"
+                                   Placement="Bottom"
+                                   IsLightDismissEnabled="True">
+								<Border Background="{DynamicResource Brush.Surface}"
+                                        BorderBrush="{DynamicResource Brush.Border}"
+                                        BorderThickness="2"
+                                        CornerRadius="6"
+                                        Padding="12"
+                                        MaxWidth="400">
+									<SelectableTextBlock Text="Options: frontal, left, left-profile, prone, right-profile, supine, up-stairs, ¾ left, ¾ right, or brief context. Use 'uncertain (likely left)' when unsure."
+                                                        TextWrapping="Wrap"
+                                                        FontSize="12"/>
+								</Border>
+							</Popup>
 						</StackPanel>
 						<TextBox Text="{Binding Facing}" Watermark="e.g., facing camera, 45° left, profile"/>
 					</StackPanel>
-
 					<!-- Hands -->
 					<Grid ColumnDefinitions="*,*" ColumnSpacing="12" RowDefinitions="Auto" RowSpacing="6">
 						<StackPanel Grid.Column="0" Spacing="4">
@@ -158,11 +181,35 @@
 									<Run Text="Left Hand"/>
 									<Run Text=" *" Foreground="{DynamicResource Brush.Danger}"/>
 								</TextBlock>
-								<TextBlock Text="?"
-                                           FontWeight="Bold"
-                                           Foreground="{DynamicResource Brush.Primary}"
-                                           Cursor="Help"
-                                           ToolTip.Tip="Examples: at 10 o'clock on wheel; clasped with right before chest; clasped with right behind back; cradling infant; crossed over right biceps; forward swing; grabbing bar; holding book; holding crutch; holding leash; holding mic; holding suitcase; in coat pocket (occluded); in left pocket (occluded); lead glove forward; occluded (likely on hip); occluded behind torso (likely on hip); on abdomen; on backpack strap; on floor; on forearm support; on guitar neck (fretboard); on handlebar; on hip; on keyboard; on pushrim; on railing; on thigh (partly occluded); palms together overhead; pressed together with right at sternum; raised overhead (open palm); rear rack; resting on knee; resting on left cheek; resting on stair rail; side extension (T); tossing ball; wave at shoulder height. Use 'occluded', 'partly occluded', or 'unknown' where visibility is limited."/>
+								<ToggleButton x:Name="LeftHandHelpButton"
+                                        Content="?" 
+                                        FontWeight="Bold" 
+                                        Padding="0"
+                                        Width="18"
+                                        Height="18"
+                                        VerticalAlignment="Center"
+                                        HorizontalContentAlignment="Center"
+                                        VerticalContentAlignment="Center"
+                                        Background="{DynamicResource Brush.Primary}"
+                                        Foreground="White"
+                                        CornerRadius="9"
+                                        FontSize="11"
+                                        Cursor="Hand"/>
+								<Popup PlacementTarget="{Binding #LeftHandHelpButton}"
+                                       IsOpen="{Binding #LeftHandHelpButton.IsChecked, Mode=TwoWay}"
+                                       Placement="Bottom"
+                                       IsLightDismissEnabled="True">
+									<Border Background="{DynamicResource Brush.Surface}"
+                                            BorderBrush="{DynamicResource Brush.Border}"
+                                            BorderThickness="2"
+                                            CornerRadius="6"
+                                            Padding="12"
+                                            MaxWidth="500">
+										<SelectableTextBlock Text="Examples: at 10 o'clock on wheel; clasped with right before chest; clasped with right behind back; cradling infant; crossed over right biceps; forward swing; grabbing bar; holding book; holding crutch; holding leash; holding mic; holding suitcase; in coat pocket (occluded); in left pocket (occluded); lead glove forward; occluded (likely on hip); occluded behind torso (likely on hip); on abdomen; on backpack strap; on floor; on forearm support; on guitar neck (fretboard); on handlebar; on hip; on keyboard; on pushrim; on railing; on thigh (partly occluded); palms together overhead; pressed together with right at sternum; raised overhead (open palm); rear rack; resting on knee; resting on left cheek; resting on stair rail; side extension (T); tossing ball; wave at shoulder height. Use 'occluded', 'partly occluded', or 'unknown' where visibility is limited."
+                                                            TextWrapping="Wrap"
+                                                            FontSize="12"/>
+									</Border>
+								</Popup>
 							</StackPanel>
 							<TextBox Text="{Binding LeftHand}" Watermark="e.g., raised, open palm, on hip"/>
 						</StackPanel>
@@ -172,11 +219,35 @@
 									<Run Text="Right Hand"/>
 									<Run Text=" *" Foreground="{DynamicResource Brush.Danger}"/>
 								</TextBlock>
-								<TextBlock Text="?"
-                                           FontWeight="Bold"
-                                           Foreground="{DynamicResource Brush.Primary}"
-                                           Cursor="Help"
-                                           ToolTip.Tip="Examples: adjusting scarf; at side; back swing; chin support; clasped with left; clasped with left behind back; crossed over abdomen; crossed under left arm; forward reach; free; free swing; gesturing outward; grabbing bar; guarding chin; handlebar; holding cup; holding phone at chest; holding tote; mid-swing; on backpack strap; on brake hood; on forearm support; on gear lever; on hip; on lap; on mouse; on phone taking selfie; on pillow; on right thigh; on thigh; over strings; palms together overhead; pointing at screen; pressed together with left; racket back; reaching overhead to shelf; supporting back; unknown (fully occluded by bag). Use 'occluded', 'partly occluded', or 'unknown' where visibility is limited."/>
+								<ToggleButton x:Name="RightHandHelpButton"
+                                        Content="?" 
+                                        FontWeight="Bold" 
+                                        Padding="0"
+                                        Width="18"
+                                        Height="18"
+                                        VerticalAlignment="Center"
+                                        HorizontalContentAlignment="Center"
+                                        VerticalContentAlignment="Center"
+                                        Background="{DynamicResource Brush.Primary}"
+                                        Foreground="White"
+                                        CornerRadius="9"
+                                        FontSize="11"
+                                        Cursor="Hand"/>
+								<Popup PlacementTarget="{Binding #RightHandHelpButton}"
+                                       IsOpen="{Binding #RightHandHelpButton.IsChecked, Mode=TwoWay}"
+                                       Placement="Bottom"
+                                       IsLightDismissEnabled="True">
+									<Border Background="{DynamicResource Brush.Surface}"
+                                            BorderBrush="{DynamicResource Brush.Border}"
+                                            BorderThickness="2"
+                                            CornerRadius="6"
+                                            Padding="12"
+                                            MaxWidth="500">
+										<SelectableTextBlock Text="Examples: adjusting scarf; at side; back swing; chin support; clasped with left; clasped with left behind back; crossed over abdomen; crossed under left arm; forward reach; free; free swing; gesturing outward; grabbing bar; guarding chin; handlebar; holding cup; holding phone at chest; holding tote; mid-swing; on backpack strap; on brake hood; on forearm support; on gear lever; on hip; on lap; on mouse; on phone taking selfie; on pillow; on right thigh; on thigh; over strings; palms together overhead; pointing at screen; pressed together with left; racket back; reaching overhead to shelf; supporting back; unknown (fully occluded by bag). Use 'occluded', 'partly occluded', or 'unknown' where visibility is limited."
+                                                            TextWrapping="Wrap"
+                                                            FontSize="12"/>
+									</Border>
+								</Popup>
 							</StackPanel>
 							<TextBox Text="{Binding RightHand}" Watermark="e.g., relaxed, holding object, on hip"/>
 						</StackPanel>
@@ -190,11 +261,35 @@
 									<Run Text="Left Foot"/>
 									<Run Text=" *" Foreground="{DynamicResource Brush.Danger}"/>
 								</TextBlock>
-								<TextBlock Text="?"
-                                           FontWeight="Bold"
-                                           Foreground="{DynamicResource Brush.Primary}"
-                                           Cursor="Help"
-                                           ToolTip.Tip="Examples: on right thigh (tree pose); on floor; forward; weight bearing; behind. Use 'occluded', 'partly occluded', 'off frame', or 'unknown' where visibility is limited."/>
+								<ToggleButton x:Name="LeftFootHelpButton"
+                                        Content="?" 
+                                        FontWeight="Bold" 
+                                        Padding="0"
+                                        Width="18"
+                                        Height="18"
+                                        VerticalAlignment="Center"
+                                        HorizontalContentAlignment="Center"
+                                        VerticalContentAlignment="Center"
+                                        Background="{DynamicResource Brush.Primary}"
+                                        Foreground="White"
+                                        CornerRadius="9"
+                                        FontSize="11"
+                                        Cursor="Hand"/>
+								<Popup PlacementTarget="{Binding #LeftFootHelpButton}"
+                                       IsOpen="{Binding #LeftFootHelpButton.IsChecked, Mode=TwoWay}"
+                                       Placement="Bottom"
+                                       IsLightDismissEnabled="True">
+									<Border Background="{DynamicResource Brush.Surface}"
+                                            BorderBrush="{DynamicResource Brush.Border}"
+                                            BorderThickness="2"
+                                            CornerRadius="6"
+                                            Padding="12"
+                                            MaxWidth="400">
+										<SelectableTextBlock Text="Examples: on right thigh (tree pose); on floor; forward; weight bearing; behind. Use 'occluded', 'partly occluded', 'off frame', or 'unknown' where visibility is limited."
+                                                            TextWrapping="Wrap"
+                                                            FontSize="12"/>
+									</Border>
+								</Popup>
 							</StackPanel>
 							<TextBox Text="{Binding LeftFoot}" Watermark="e.g., weight bearing, forward, behind"/>
 						</StackPanel>
@@ -204,11 +299,35 @@
 									<Run Text="Right Foot"/>
 									<Run Text=" *" Foreground="{DynamicResource Brush.Danger}"/>
 								</TextBlock>
-								<TextBlock Text="?"
-                                           FontWeight="Bold"
-                                           Foreground="{DynamicResource Brush.Primary}"
-                                           Cursor="Help"
-                                           ToolTip.Tip="Examples: occluded; off frame; on floor; tiptoe; forward; turned out; weight bearing. Use 'occluded', 'partly occluded', 'off frame', or 'unknown' where visibility is limited."/>
+								<ToggleButton x:Name="RightFootHelpButton"
+                                        Content="?" 
+                                        FontWeight="Bold" 
+                                        Padding="0"
+                                        Width="18"
+                                        Height="18"
+                                        VerticalAlignment="Center"
+                                        HorizontalContentAlignment="Center"
+                                        VerticalContentAlignment="Center"
+                                        Background="{DynamicResource Brush.Primary}"
+                                        Foreground="White"
+                                        CornerRadius="9"
+                                        FontSize="11"
+                                        Cursor="Hand"/>
+								<Popup PlacementTarget="{Binding #RightFootHelpButton}"
+                                       IsOpen="{Binding #RightFootHelpButton.IsChecked, Mode=TwoWay}"
+                                       Placement="Bottom"
+                                       IsLightDismissEnabled="True">
+									<Border Background="{DynamicResource Brush.Surface}"
+                                            BorderBrush="{DynamicResource Brush.Border}"
+                                            BorderThickness="2"
+                                            CornerRadius="6"
+                                            Padding="12"
+                                            MaxWidth="400">
+										<SelectableTextBlock Text="Examples: occluded; off frame; on floor; tiptoe; forward; turned out; weight bearing. Use 'occluded', 'partly occluded', 'off frame', or 'unknown' where visibility is limited."
+                                                            TextWrapping="Wrap"
+                                                            FontSize="12"/>
+									</Border>
+								</Popup>
 							</StackPanel>
 							<TextBox Text="{Binding RightFoot}" Watermark="e.g., tiptoe, forward, turned out"/>
 						</StackPanel>
