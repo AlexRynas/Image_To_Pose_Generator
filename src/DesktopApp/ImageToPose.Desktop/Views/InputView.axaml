@@ -7,215 +7,250 @@
              mc:Ignorable="d" d:DesignWidth="1024" d:DesignHeight="700"
              x:Class="ImageToPose.Desktop.Views.InputView"
              x:DataType="vm:InputViewModel">
-    
-    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-        <DockPanel Margin="24">
-            <!-- Right side: Mode and Estimates -->
-            <StackPanel DockPanel.Dock="Right" Width="320" Spacing="12">
-                <Border BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="6" Padding="10">
-                    <StackPanel Spacing="8">
-                        <TextBlock Text="Operating Mode" FontWeight="SemiBold"/>
-                        <ComboBox SelectedItem="{Binding ModeVM.Mode}">
-                            <ComboBox.Items>
-                                <models:OperatingMode>Budget</models:OperatingMode>
-                                <models:OperatingMode>Balanced</models:OperatingMode>
-                                <models:OperatingMode>Quality</models:OperatingMode>
-                            </ComboBox.Items>
-                        </ComboBox>
-                        <TextBlock Text="{Binding ModeVM.ModeDescription}" FontSize="12" Foreground="{DynamicResource Brush.TextMuted}" TextWrapping="Wrap"/>
-                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                            <TextBlock Text="Using:" VerticalAlignment="Center"/>
-                            <ComboBox ItemsSource="{Binding ModeVM.AvailableModelIds}"
+
+	<ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+		<DockPanel Margin="24">
+			<!-- Right side: Mode and Estimates -->
+			<StackPanel DockPanel.Dock="Right" Width="320" Spacing="12">
+				<Border BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="6" Padding="10">
+					<StackPanel Spacing="8">
+						<TextBlock Text="Operating Mode" FontWeight="SemiBold"/>
+						<ComboBox SelectedItem="{Binding ModeVM.Mode}">
+							<ComboBox.Items>
+								<models:OperatingMode>Budget</models:OperatingMode>
+								<models:OperatingMode>Balanced</models:OperatingMode>
+								<models:OperatingMode>Quality</models:OperatingMode>
+							</ComboBox.Items>
+						</ComboBox>
+						<TextBlock Text="{Binding ModeVM.ModeDescription}" FontSize="12" Foreground="{DynamicResource Brush.TextMuted}" TextWrapping="Wrap"/>
+						<StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+							<TextBlock Text="Using:" VerticalAlignment="Center"/>
+							<ComboBox ItemsSource="{Binding ModeVM.AvailableModelIds}"
                                       SelectedItem="{Binding ModeVM.SelectedModelId, Mode=TwoWay}"
                                       MinWidth="180"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                            <Button Content="OpenAI Pricing" Command="{Binding ModeVM.RefreshPricingCommand}" HorizontalAlignment="Left"/>
-                        </StackPanel>
+						</StackPanel>
+						<StackPanel Orientation="Horizontal" Spacing="6">
+							<Button Content="OpenAI Pricing" Command="{Binding ModeVM.RefreshPricingCommand}" HorizontalAlignment="Left"/>
+						</StackPanel>
 
-                        <!-- Error banner for mode/model pricing errors -->
-                        <Border Background="{DynamicResource Brush.Danger}"
+						<!-- Error banner for mode/model pricing errors -->
+						<Border Background="{DynamicResource Brush.Danger}"
                                 BorderBrush="{DynamicResource Brush.Border}"
                                 BorderThickness="1"
                                 CornerRadius="6"
                                 Padding="8"
                                 IsVisible="{Binding ModeVM.ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                            <TextBlock Text="{Binding ModeVM.ErrorMessage}" Foreground="White" TextWrapping="Wrap" FontSize="12"/>
-                        </Border>
-                    </StackPanel>
-                </Border>
+							<TextBlock Text="{Binding ModeVM.ErrorMessage}" Foreground="White" TextWrapping="Wrap" FontSize="12"/>
+						</Border>
+					</StackPanel>
+				</Border>
 
-                <Border BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="6" Padding="10">
-                    <StackPanel Spacing="6">
-                        <TextBlock Text="Estimates (≈ tokens → USD)" FontWeight="SemiBold"/>
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="Step 1 (Vision)" FontWeight="SemiBold"/>
-                            <TextBlock FontSize="12">
-                                <Run Text="Input: "/>
-                                <Run Text="{Binding ModeVM.VisionEstimate.InputTokens}"/>
-                                <Run Text=" tokens"/>
-                            </TextBlock>
-                            <TextBlock FontSize="12">
-                                <Run Text="Output: "/>
-                                <Run Text="{Binding ModeVM.VisionEstimate.OutputTokens}"/>
-                                <Run Text=" tokens"/>
-                            </TextBlock>
-                            <TextBlock FontSize="12">
-                                <Run Text="≈ $"/>
-                                <Run Text="{Binding ModeVM.VisionEstimate.TotalUsd, StringFormat={}{0:F6}}"/>
-                            </TextBlock>
-                        </StackPanel>
-                        <Separator/>
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="Step 2 (Text)" FontWeight="SemiBold"/>
-                            <TextBlock FontSize="12">
-                                <Run Text="Input: "/>
-                                <Run Text="{Binding ModeVM.TextEstimate.InputTokens}"/>
-                                <Run Text=" tokens"/>
-                            </TextBlock>
-                            <TextBlock FontSize="12">
-                                <Run Text="Output: "/>
-                                <Run Text="{Binding ModeVM.TextEstimate.OutputTokens}"/>
-                                <Run Text=" tokens"/>
-                            </TextBlock>
-                            <TextBlock FontSize="12">
-                                <Run Text="≈ $"/>
-                                <Run Text="{Binding ModeVM.TextEstimate.TotalUsd, StringFormat={}{0:F6}}"/>
-                            </TextBlock>
-                        </StackPanel>
-                        <TextBlock Text="Estimates only; see OpenAI billing for exacts." FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" TextWrapping="Wrap"/>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
+				<Border BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="6" Padding="10">
+					<StackPanel Spacing="6">
+						<TextBlock Text="Estimates (≈ tokens → USD)" FontWeight="SemiBold"/>
+						<StackPanel Spacing="2">
+							<TextBlock Text="Step 1 (Vision)" FontWeight="SemiBold"/>
+							<TextBlock FontSize="12">
+								<Run Text="Input: "/>
+								<Run Text="{Binding ModeVM.VisionEstimate.InputTokens}"/>
+								<Run Text=" tokens"/>
+							</TextBlock>
+							<TextBlock FontSize="12">
+								<Run Text="Output: "/>
+								<Run Text="{Binding ModeVM.VisionEstimate.OutputTokens}"/>
+								<Run Text=" tokens"/>
+							</TextBlock>
+							<TextBlock FontSize="12">
+								<Run Text="≈ $"/>
+								<Run Text="{Binding ModeVM.VisionEstimate.TotalUsd, StringFormat={}{0:F6}}"/>
+							</TextBlock>
+						</StackPanel>
+						<Separator/>
+						<StackPanel Spacing="2">
+							<TextBlock Text="Step 2 (Text)" FontWeight="SemiBold"/>
+							<TextBlock FontSize="12">
+								<Run Text="Input: "/>
+								<Run Text="{Binding ModeVM.TextEstimate.InputTokens}"/>
+								<Run Text=" tokens"/>
+							</TextBlock>
+							<TextBlock FontSize="12">
+								<Run Text="Output: "/>
+								<Run Text="{Binding ModeVM.TextEstimate.OutputTokens}"/>
+								<Run Text=" tokens"/>
+							</TextBlock>
+							<TextBlock FontSize="12">
+								<Run Text="≈ $"/>
+								<Run Text="{Binding ModeVM.TextEstimate.TotalUsd, StringFormat={}{0:F6}}"/>
+							</TextBlock>
+						</StackPanel>
+						<TextBlock Text="Estimates only; see OpenAI billing for exacts." FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" TextWrapping="Wrap"/>
+					</StackPanel>
+				</Border>
+			</StackPanel>
 
-            <!-- Left/main content -->
-            <StackPanel MaxWidth="700" Margin="20" Spacing="20">
-                <TextBlock Text="Input Image and Pose Anchors" 
-                           FontSize="28" 
-                           FontWeight="Bold" 
+			<!-- Left/main content -->
+			<StackPanel MaxWidth="700" Margin="20" Spacing="20">
+				<TextBlock Text="Input Image and Pose Anchors"
+                           FontSize="28"
+                           FontWeight="Bold"
                            Margin="0,0,0,10"/>
-                
-                <TextBlock TextWrapping="Wrap" FontSize="14">
-                    Select a reference image and provide all required pose anchors. Notes are optional.
-                </TextBlock>
-                
-                <!-- Image Selection -->
-                <StackPanel Spacing="10">
-                    <TextBlock Text="Reference Image:" FontWeight="SemiBold" FontSize="16"/>
-                    <Button Content="Select Image..." 
+
+				<TextBlock TextWrapping="Wrap" FontSize="14">
+					Select a reference image and provide all required pose anchors. Notes are optional.
+				</TextBlock>
+
+				<!-- Image Selection -->
+				<StackPanel Spacing="10">
+					<TextBlock Text="Reference Image:" FontWeight="SemiBold" FontSize="16"/>
+					<Button Content="Select Image..."
                             Command="{Binding SelectImageCommand}"
                             HorizontalAlignment="Left"
                             Padding="20,10"/>
-                    
-                    <TextBlock Text="{Binding ImagePath}" 
-                               TextWrapping="Wrap" 
-                               FontSize="12" 
+
+					<TextBlock Text="{Binding ImagePath}"
+                               TextWrapping="Wrap"
+                               FontSize="12"
                                Foreground="{DynamicResource Brush.TextMuted}"
                                IsVisible="{Binding ImagePath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
-                    
-                    <!-- Image Preview -->
-                    <Border BorderBrush="{DynamicResource Brush.Border}" 
+
+					<!-- Image Preview -->
+					<Border BorderBrush="{DynamicResource Brush.Border}"
                             Background="{DynamicResource Brush.Surface}"
-                            BorderThickness="1" 
-                            CornerRadius="8" 
-                            MaxWidth="400" 
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            MaxWidth="400"
                             MaxHeight="400"
                             HorizontalAlignment="Left"
                             IsVisible="{Binding ImagePreview, Converter={x:Static ObjectConverters.IsNotNull}}">
-                        <Image Source="{Binding ImagePreview}" 
+						<Image Source="{Binding ImagePreview}"
                                Stretch="Uniform"/>
-                    </Border>
-                </StackPanel>
-                
-                <!-- Pose Anchors -->
-                <StackPanel Spacing="10">
-                    <TextBlock Text="Pose Anchors:" FontWeight="SemiBold" FontSize="16"/>
-                    <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource Brush.TextMuted}">
-                        Fields marked with * are required.
-                    </TextBlock>
+					</Border>
+				</StackPanel>
 
-                    <!-- Facing -->
-                    <StackPanel Spacing="4">
-                        <TextBlock>
-                            <Run Text="Facing"/>
-                            <Run Text=" *" Foreground="{DynamicResource Brush.Danger}"/>
-                        </TextBlock>
-                        <TextBox Text="{Binding Facing}" Watermark="e.g., facing camera, 45° left, profile"/>
-                    </StackPanel>
+				<!-- Pose Anchors -->
+				<StackPanel Spacing="10">
+					<TextBlock Text="Pose Anchors:" FontWeight="SemiBold" FontSize="16"/>
+					<TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource Brush.TextMuted}">
+						Fields marked with * are required.
+					</TextBlock>
 
-                    <!-- Hands -->
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12" RowDefinitions="Auto" RowSpacing="6">
-                        <StackPanel Grid.Column="0" Spacing="4">
-                            <TextBlock>
-                                <Run Text="Left Hand"/>
-                                <Run Text=" *" Foreground="{DynamicResource Brush.Danger}"/>
-                            </TextBlock>
-                            <TextBox Text="{Binding LeftHand}" Watermark="e.g., raised, open palm, on hip"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Spacing="4">
-                            <TextBlock>
-                                <Run Text="Right Hand"/>
-                                <Run Text=" *" Foreground="{DynamicResource Brush.Danger}"/>
-                            </TextBlock>
-                            <TextBox Text="{Binding RightHand}" Watermark="e.g., relaxed, holding object, on hip"/>
-                        </StackPanel>
-                    </Grid>
+					<!-- Facing -->
+					<StackPanel Spacing="4">
+						<StackPanel Orientation="Horizontal" Spacing="6">
+							<TextBlock>
+								<Run Text="Facing"/>
+								<Run Text=" *" Foreground="{DynamicResource Brush.Danger}"/>
+							</TextBlock>
+							<TextBlock Text="?"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource Brush.Primary}"
+                                       Cursor="Help"
+                                       ToolTip.Tip="Options: frontal, left, left-profile, prone, right-profile, supine, up-stairs, ¾ left, ¾ right, or brief context. Use 'uncertain (likely left)' when unsure."/>
+						</StackPanel>
+						<TextBox Text="{Binding Facing}" Watermark="e.g., facing camera, 45° left, profile"/>
+					</StackPanel>
 
-                    <!-- Feet -->
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12" RowDefinitions="Auto" RowSpacing="6">
-                        <StackPanel Grid.Column="0" Spacing="4">
-                            <TextBlock>
-                                <Run Text="Left Foot"/>
-                                <Run Text=" *" Foreground="{DynamicResource Brush.Danger}"/>
-                            </TextBlock>
-                            <TextBox Text="{Binding LeftFoot}" Watermark="e.g., weight bearing, forward, behind"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Spacing="4">
-                            <TextBlock>
-                                <Run Text="Right Foot"/>
-                                <Run Text=" *" Foreground="{DynamicResource Brush.Danger}"/>
-                            </TextBlock>
-                            <TextBox Text="{Binding RightFoot}" Watermark="e.g., tiptoe, forward, turned out"/>
-                        </StackPanel>
-                    </Grid>
+					<!-- Hands -->
+					<Grid ColumnDefinitions="*,*" ColumnSpacing="12" RowDefinitions="Auto" RowSpacing="6">
+						<StackPanel Grid.Column="0" Spacing="4">
+							<StackPanel Orientation="Horizontal" Spacing="6">
+								<TextBlock>
+									<Run Text="Left Hand"/>
+									<Run Text=" *" Foreground="{DynamicResource Brush.Danger}"/>
+								</TextBlock>
+								<TextBlock Text="?"
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource Brush.Primary}"
+                                           Cursor="Help"
+                                           ToolTip.Tip="Examples: at 10 o'clock on wheel; clasped with right before chest; clasped with right behind back; cradling infant; crossed over right biceps; forward swing; grabbing bar; holding book; holding crutch; holding leash; holding mic; holding suitcase; in coat pocket (occluded); in left pocket (occluded); lead glove forward; occluded (likely on hip); occluded behind torso (likely on hip); on abdomen; on backpack strap; on floor; on forearm support; on guitar neck (fretboard); on handlebar; on hip; on keyboard; on pushrim; on railing; on thigh (partly occluded); palms together overhead; pressed together with right at sternum; raised overhead (open palm); rear rack; resting on knee; resting on left cheek; resting on stair rail; side extension (T); tossing ball; wave at shoulder height. Use 'occluded', 'partly occluded', or 'unknown' where visibility is limited."/>
+							</StackPanel>
+							<TextBox Text="{Binding LeftHand}" Watermark="e.g., raised, open palm, on hip"/>
+						</StackPanel>
+						<StackPanel Grid.Column="1" Spacing="4">
+							<StackPanel Orientation="Horizontal" Spacing="6">
+								<TextBlock>
+									<Run Text="Right Hand"/>
+									<Run Text=" *" Foreground="{DynamicResource Brush.Danger}"/>
+								</TextBlock>
+								<TextBlock Text="?"
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource Brush.Primary}"
+                                           Cursor="Help"
+                                           ToolTip.Tip="Examples: adjusting scarf; at side; back swing; chin support; clasped with left; clasped with left behind back; crossed over abdomen; crossed under left arm; forward reach; free; free swing; gesturing outward; grabbing bar; guarding chin; handlebar; holding cup; holding phone at chest; holding tote; mid-swing; on backpack strap; on brake hood; on forearm support; on gear lever; on hip; on lap; on mouse; on phone taking selfie; on pillow; on right thigh; on thigh; over strings; palms together overhead; pointing at screen; pressed together with left; racket back; reaching overhead to shelf; supporting back; unknown (fully occluded by bag). Use 'occluded', 'partly occluded', or 'unknown' where visibility is limited."/>
+							</StackPanel>
+							<TextBox Text="{Binding RightHand}" Watermark="e.g., relaxed, holding object, on hip"/>
+						</StackPanel>
+					</Grid>
 
-                    <!-- Notes -->
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="Notes (optional)"/>
-                        <TextBox Text="{Binding Notes}" 
-                                 AcceptsReturn="True" 
-                                 TextWrapping="Wrap" 
+					<!-- Feet -->
+					<Grid ColumnDefinitions="*,*" ColumnSpacing="12" RowDefinitions="Auto" RowSpacing="6">
+						<StackPanel Grid.Column="0" Spacing="4">
+							<StackPanel Orientation="Horizontal" Spacing="6">
+								<TextBlock>
+									<Run Text="Left Foot"/>
+									<Run Text=" *" Foreground="{DynamicResource Brush.Danger}"/>
+								</TextBlock>
+								<TextBlock Text="?"
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource Brush.Primary}"
+                                           Cursor="Help"
+                                           ToolTip.Tip="Examples: on right thigh (tree pose); on floor; forward; weight bearing; behind. Use 'occluded', 'partly occluded', 'off frame', or 'unknown' where visibility is limited."/>
+							</StackPanel>
+							<TextBox Text="{Binding LeftFoot}" Watermark="e.g., weight bearing, forward, behind"/>
+						</StackPanel>
+						<StackPanel Grid.Column="1" Spacing="4">
+							<StackPanel Orientation="Horizontal" Spacing="6">
+								<TextBlock>
+									<Run Text="Right Foot"/>
+									<Run Text=" *" Foreground="{DynamicResource Brush.Danger}"/>
+								</TextBlock>
+								<TextBlock Text="?"
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource Brush.Primary}"
+                                           Cursor="Help"
+                                           ToolTip.Tip="Examples: occluded; off frame; on floor; tiptoe; forward; turned out; weight bearing. Use 'occluded', 'partly occluded', 'off frame', or 'unknown' where visibility is limited."/>
+							</StackPanel>
+							<TextBox Text="{Binding RightFoot}" Watermark="e.g., tiptoe, forward, turned out"/>
+						</StackPanel>
+					</Grid>
+
+					<!-- Notes -->
+					<StackPanel Spacing="4">
+						<TextBlock Text="Notes (optional)"/>
+						<TextBox Text="{Binding Notes}"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
                                  MinHeight="120"
                                  Watermark="Other pose details, scene hints, or constraints..."/>
-                    </StackPanel>
-                </StackPanel>
-                
-                <!-- Error Message -->
-                <Border Background="{DynamicResource Brush.Danger}" 
-                        BorderBrush="{DynamicResource Brush.Border}" 
-                        BorderThickness="1" 
-                        CornerRadius="8" 
+					</StackPanel>
+				</StackPanel>
+
+				<!-- Error Message -->
+				<Border Background="{DynamicResource Brush.Danger}"
+                        BorderBrush="{DynamicResource Brush.Border}"
+                        BorderThickness="1"
+                        CornerRadius="8"
                         Padding="12"
                         IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                    <TextBlock Text="{Binding ErrorMessage}" 
-                               TextWrapping="Wrap" 
+					<TextBlock Text="{Binding ErrorMessage}"
+                               TextWrapping="Wrap"
                                Foreground="White"/>
-                </Border>
-                
-                <!-- Processing Indicator -->
-                <StackPanel Orientation="Vertical" Spacing="10" IsVisible="{Binding IsProcessing}" HorizontalAlignment="Stretch">
-                    <ProgressBar IsIndeterminate="True" Height="4" HorizontalAlignment="Stretch"/>
-                    <TextBlock Text="Processing with AI..." HorizontalAlignment="Center" TextAlignment="Center"/>
-                </StackPanel>
-                
-                <Button Content="Process Photo and Pose Description" 
+				</Border>
+
+				<!-- Processing Indicator -->
+				<StackPanel Orientation="Vertical" Spacing="10" IsVisible="{Binding IsProcessing}" HorizontalAlignment="Stretch">
+					<ProgressBar IsIndeterminate="True" Height="4" HorizontalAlignment="Stretch"/>
+					<TextBlock Text="Processing with AI..." HorizontalAlignment="Center" TextAlignment="Center"/>
+				</StackPanel>
+
+				<Button Content="Process Photo and Pose Description"
                         Command="{Binding ProcessImageAndPoseCommand}"
                         IsEnabled="{Binding CanProcessImageAndPose}"
                         HorizontalAlignment="Center"
                         FontSize="16"
                         Padding="30,12"
                         Margin="0,20,0,0"/>
-            </StackPanel>
-        </DockPanel>
-    </ScrollViewer>
+			</StackPanel>
+		</DockPanel>
+	</ScrollViewer>
 </UserControl>
