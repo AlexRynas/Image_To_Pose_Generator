@@ -28,10 +28,19 @@ The workflow combines computer vision analysis with biomechanical understanding 
 - **JSON export**: Copy to clipboard or save bone rotations as JSON files
 - **Single executable**: No installation required - just download and run
 
+### Download
+
+**[📦 Download Latest Release](https://github.com/AlexRynas/Image_To_Pose_Generator/releases/latest)**
+
+Available for:
+- Windows (x64, ARM64)
+- Linux (x64)
+- macOS (Intel, Apple Silicon)
+
 ### Quick Start
 
-1. **Download** the latest release (single `.exe` file)
-2. **Run** `ImageToPose.Desktop.exe`
+1. **Download** the latest release for your platform from the link above
+2. **Extract** the zip file and run the executable
 3. **Provide your OpenAI API key** ([Get one here](https://platform.openai.com/api-keys))
 4. **Select operating mode** (Budget/Balanced/Quality)
 5. **Select a reference image** and describe the rough pose
@@ -41,7 +50,7 @@ The workflow combines computer vision analysis with biomechanical understanding 
 
 ### Requirements
 
-- **Windows 10/11** (64-bit)
+- **Windows 10/11** (64-bit), macOS 10.15+, or Linux with GTK
 - **OpenAI API key** (required - you provide your own)
 - Internet connection for API calls
 
