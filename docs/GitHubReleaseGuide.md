@@ -80,7 +80,7 @@ To ensure code quality:
 
 This is the main release workflow that:
 - **Triggers on:** Version tags (v*.*.*)
-- **Builds for:** Windows (x64, ARM64), Linux (x64), macOS (x64, ARM64)
+- **Builds for:** Windows (x64, ARM64)
 - **Runs:** All unit tests before building
 - **Creates:** A GitHub release with:
   - Auto-generated release notes from commits
@@ -90,9 +90,6 @@ This is the main release workflow that:
 **Build artifacts naming:**
 - `ImageToPose-Windows-x64.zip` - Windows 64-bit Intel/AMD
 - `ImageToPose-Windows-ARM64.zip` - Windows ARM64 (Surface, etc.)
-- `ImageToPose-Linux-x64.zip` - Linux 64-bit
-- `ImageToPose-macOS-x64.zip` - macOS Intel
-- `ImageToPose-macOS-ARM64.zip` - macOS Apple Silicon (M1/M2/M3)
 
 ### `.github/workflows/ci.yml`
 

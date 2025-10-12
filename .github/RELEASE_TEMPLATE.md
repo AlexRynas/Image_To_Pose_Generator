@@ -31,9 +31,6 @@ Download the appropriate version for your platform:
 
 - **Windows (64-bit Intel/AMD):** `ImageToPose-Windows-x64.zip`
 - **Windows (ARM64):** `ImageToPose-Windows-ARM64.zip` *(for Surface devices, etc.)*
-- **Linux (64-bit):** `ImageToPose-Linux-x64.zip`
-- **macOS (Intel):** `ImageToPose-macOS-x64.zip`
-- **macOS (Apple Silicon):** `ImageToPose-macOS-ARM64.zip` *(for M1/M2/M3 Macs)*
 
 ### First Time Setup
 1. Extract the zip file
@@ -50,7 +47,7 @@ Simply download the new version and replace the old executable. Your settings wi
 
 ## 📋 Requirements
 
-- Windows 10/11 (64-bit) or macOS 10.15+ or Linux with GTK
+- Windows 10/11 (64-bit)
 - OpenAI API key
 - Internet connection for API calls
 

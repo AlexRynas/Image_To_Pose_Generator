@@ -7,25 +7,14 @@ on:
 
 jobs:
   build-and-release:
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
     strategy:
       matrix:
         include:
-          - os: windows-latest
-            runtime: win-x64
+          - runtime: win-x64
             artifact-name: ImageToPose-Windows-x64
-          - os: windows-latest
-            runtime: win-arm64
+          - runtime: win-arm64
             artifact-name: ImageToPose-Windows-ARM64
-          - os: ubuntu-latest
-            runtime: linux-x64
-            artifact-name: ImageToPose-Linux-x64
-          - os: macos-latest
-            runtime: osx-x64
-            artifact-name: ImageToPose-macOS-x64
-          - os: macos-latest
-            runtime: osx-arm64
-            artifact-name: ImageToPose-macOS-ARM64
 
     steps:
       - name: Checkout code
@@ -45,17 +34,8 @@ jobs:
       - name: Publish application
         run: dotnet publish src/DesktopApp/ImageToPose.Desktop/ImageToPose.Desktop.csproj --configuration Release --runtime ${{ matrix.runtime }} --self-contained true --output ./publish/${{ matrix.runtime }} -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false
 
-      - name: Create archive (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          Compress-Archive -Path ./publish/${{ matrix.runtime }}/* -DestinationPath ./${{ matrix.artifact-name }}.zip
-
-      - name: Create archive (Unix)
-        if: runner.os != 'Windows'
-        run: |
-          cd ./publish/${{ matrix.runtime }}
-          zip -r ../../${{ matrix.artifact-name }}.zip .
-          cd ../..
+      - name: Create archive
+        run: Compress-Archive -Path ./publish/${{ matrix.runtime }}/* -DestinationPath ./${{ matrix.artifact-name }}.zip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -92,8 +72,5 @@ jobs:
           files: |
             ./artifacts/ImageToPose-Windows-x64/ImageToPose-Windows-x64.zip
             ./artifacts/ImageToPose-Windows-ARM64/ImageToPose-Windows-ARM64.zip
-            ./artifacts/ImageToPose-Linux-x64/ImageToPose-Linux-x64.zip
-            ./artifacts/ImageToPose-macOS-x64/ImageToPose-macOS-x64.zip
-            ./artifacts/ImageToPose-macOS-ARM64/ImageToPose-macOS-ARM64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

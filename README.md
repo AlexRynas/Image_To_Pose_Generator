@@ -33,9 +33,8 @@ The workflow combines computer vision analysis with biomechanical understanding 
 **[📦 Download Latest Release](https://github.com/AlexRynas/Image_To_Pose_Generator/releases/latest)**
 
 Available for:
-- Windows (x64, ARM64)
-- Linux (x64)
-- macOS (Intel, Apple Silicon)
+- **Windows 10/11** (64-bit Intel/AMD)
+- **Windows 11** (ARM64 - for Surface and other ARM devices)
 
 ### Quick Start
 
@@ -50,7 +49,7 @@ Available for:
 
 ### Requirements
 
-- **Windows 10/11** (64-bit), macOS 10.15+, or Linux with GTK
+- **Windows 10/11** (64-bit)
 - **OpenAI API key** (required - you provide your own)
 - Internet connection for API calls
 

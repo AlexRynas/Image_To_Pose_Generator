@@ -71,11 +71,8 @@ Before creating a release:
 ## Platform Output Files
 
 The automated workflow creates these files:
-- `ImageToPose-Windows-x64.zip` - Windows 64-bit
-- `ImageToPose-Windows-ARM64.zip` - Windows ARM
-- `ImageToPose-Linux-x64.zip` - Linux 64-bit  
-- `ImageToPose-macOS-x64.zip` - macOS Intel
-- `ImageToPose-macOS-ARM64.zip` - macOS ARM (M1/M2/M3)
+- `ImageToPose-Windows-x64.zip` - Windows 64-bit Intel/AMD
+- `ImageToPose-Windows-ARM64.zip` - Windows ARM64 (Surface, etc.)
 
 ## First-Time Setup
 
