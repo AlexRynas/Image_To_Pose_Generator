@@ -100,7 +100,7 @@ The app shows **real-time cost estimates** before API calls, calculated using:
 - ✅ API calls go directly to OpenAI - no third-party servers
 - ⚠️ API usage charges apply (you provide your own key)
 
-See the [Blender Workflow Guide](docs/BlenderWorkflow.md) for applying generated poses.
+See the [Blender Workflow Guide](src/DesktopApp/ImageToPose.Desktop/Assets/BlenderWorkflow.md) for applying generated poses.
 
 ## Building from Source
 

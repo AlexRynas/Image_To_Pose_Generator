@@ -17,8 +17,16 @@
 
   <ItemGroup>
     <Folder Include="Models\" />
-    <AvaloniaResource Include="Assets\**" />
+    <!-- Avalonia resources (images, icons, etc.) -->
+    <AvaloniaResource Include="Assets\avalonia-logo.ico" />
     <AvaloniaResource Include="Styles\**\*.axaml" />
+    
+    <!-- Embedded resources (prompt files, scripts, etc.) -->
+    <EmbeddedResource Include="Assets\analyse_image_and_get_pose_description_prompt.txt" />
+    <EmbeddedResource Include="Assets\chatgpt_prompt.txt" />
+    <EmbeddedResource Include="Assets\apply_pose_template.py" />
+    <EmbeddedResource Include="Assets\armature_exporter.py" />
+    <EmbeddedResource Include="Assets\MPFB_GameEngine_To_C2077_Rig_Retarget_Preset.blend-retarget" />
   </ItemGroup>
 
   <ItemGroup>
