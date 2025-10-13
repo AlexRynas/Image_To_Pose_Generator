@@ -16,8 +16,11 @@ public partial class GenerateViewModel : ViewModelBase
     private readonly WizardViewModel _wizard;
     private readonly IOpenAIService _openAIService;
     private readonly IFileService _fileService;
+    private readonly IResourceLoader _resourceLoader;
     private readonly IOpenAIErrorHandler _errorHandler;
     private readonly ILogger<GenerateViewModel>? _logger;
+    
+    private const string BlenderWorkflowResourceName = "ImageToPose.Desktop.Assets.BlenderWorkflow.md";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanGeneratePoseRig))]
@@ -44,12 +47,14 @@ public partial class GenerateViewModel : ViewModelBase
         WizardViewModel wizard,
         IOpenAIService openAIService,
         IFileService fileService,
+        IResourceLoader resourceLoader,
         IOpenAIErrorHandler errorHandler,
         ILogger<GenerateViewModel>? logger = null)
     {
         _wizard = wizard;
         _openAIService = openAIService;
         _fileService = fileService;
+        _resourceLoader = resourceLoader;
         _errorHandler = errorHandler;
         _logger = logger;
         
@@ -163,57 +168,32 @@ public partial class GenerateViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void OpenBlenderWorkflowDocs()
+    private async Task OpenBlenderWorkflowDocs()
     {
         GenerateViewModelLogs.OpeningWorkflowDocs(_logger);
         
         try
         {
-            // Start from the base directory and search upward for the repository root
-            var docsPath = FindDocsFile();
+            // Load the embedded markdown content
+            var markdownContent = await _resourceLoader.LoadEmbeddedResourceAsync(BlenderWorkflowResourceName);
             
-            if (!string.IsNullOrEmpty(docsPath) && File.Exists(docsPath))
+            // Create a temporary file to display the content
+            var tempPath = Path.Combine(Path.GetTempPath(), "BlenderWorkflow.md");
+            await File.WriteAllTextAsync(tempPath, markdownContent);
+            
+            GenerateViewModelLogs.OpeningDocsFile(_logger, tempPath);
+            
+            Process.Start(new ProcessStartInfo
             {
-                var fullPath = Path.GetFullPath(docsPath);
-                GenerateViewModelLogs.OpeningDocsFile(_logger, fullPath);
-                
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = fullPath,
-                    UseShellExecute = true
-                });
-            }
-            else
-            {
-                GenerateViewModelLogs.DocsFileNotFound(_logger, docsPath ?? "unknown");
-            }
+                FileName = tempPath,
+                UseShellExecute = true
+            });
         }
         catch (Exception ex)
         {
             GenerateViewModelLogs.OpenDocsFailed(_logger, ex);
+            ErrorMessage = $"Failed to open documentation: {ex.Message}";
         }
-    }
-
-    private static string? FindDocsFile()
-    {
-        // Start from the application's base directory
-        var currentDir = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
-        
-        // Search upward for the docs folder (max 10 levels to prevent infinite loop)
-        for (int i = 0; i < 10 && currentDir != null; i++)
-        {
-            var docsDir = Path.Combine(currentDir.FullName, "docs");
-            var docsFile = Path.Combine(docsDir, "BlenderWorkflow.md");
-            
-            if (File.Exists(docsFile))
-            {
-                return docsFile;
-            }
-            
-            currentDir = currentDir.Parent;
-        }
-        
-        return null;
     }
 
     public bool CanGeneratePoseRig => !string.IsNullOrWhiteSpace(ExtendedPoseDescription) && !IsGenerating;
@@ -273,9 +253,6 @@ static partial class GenerateViewModelLogs
 
     [LoggerMessage(LogLevel.Debug, "Opening documentation file: {FilePath}")]
     public static partial void OpeningDocsFile(ILogger? logger, string filePath);
-
-    [LoggerMessage(LogLevel.Warning, "Documentation file not found: {DocsPath}")]
-    public static partial void DocsFileNotFound(ILogger? logger, string docsPath);
 
     [LoggerMessage(LogLevel.Warning, "Failed to open documentation file")]
     public static partial void OpenDocsFailed(ILogger? logger, Exception ex);

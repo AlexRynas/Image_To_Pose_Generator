@@ -27,6 +27,7 @@
     <EmbeddedResource Include="Assets\apply_pose_template.py" />
     <EmbeddedResource Include="Assets\armature_exporter.py" />
     <EmbeddedResource Include="Assets\MPFB_GameEngine_To_C2077_Rig_Retarget_Preset.blend-retarget" />
+    <EmbeddedResource Include="Assets\BlenderWorkflow.md" />
   </ItemGroup>
 
   <ItemGroup>

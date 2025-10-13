@@ -12,6 +12,7 @@ public partial class WizardViewModel : ViewModelBase
     private readonly ISettingsService _settingsService;
     private readonly IOpenAIService _openAIService;
     private readonly IFileService _fileService;
+    private readonly IResourceLoader _resourceLoader;
     private readonly IPriceEstimator _priceEstimator;
     private readonly IOpenAIErrorHandler _errorHandler;
 
@@ -33,6 +34,7 @@ public partial class WizardViewModel : ViewModelBase
         ISettingsService settingsService,
         IOpenAIService openAIService,
         IFileService fileService,
+        IResourceLoader resourceLoader,
         IPriceEstimator priceEstimator,
         IOpenAIErrorHandler errorHandler)
     {
@@ -40,6 +42,7 @@ public partial class WizardViewModel : ViewModelBase
         _settingsService = settingsService;
         _openAIService = openAIService;
         _fileService = fileService;
+        _resourceLoader = resourceLoader;
         _priceEstimator = priceEstimator;
         _errorHandler = errorHandler;
 
@@ -52,7 +55,7 @@ public partial class WizardViewModel : ViewModelBase
         InputViewModel = new InputViewModel(this, openAIService, fileService, priceEstimator, errorHandler,
             loggerFactory, loggerFactory.CreateLogger<InputViewModel>());
         ReviewViewModel = new ReviewViewModel(this);
-        GenerateViewModel = new GenerateViewModel(this, openAIService, fileService, errorHandler,
+        GenerateViewModel = new GenerateViewModel(this, openAIService, fileService, resourceLoader, errorHandler,
             loggerFactory.CreateLogger<GenerateViewModel>());
 
         // Start with welcome

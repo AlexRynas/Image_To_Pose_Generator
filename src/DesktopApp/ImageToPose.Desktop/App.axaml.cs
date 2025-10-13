@@ -34,6 +34,7 @@ public partial class App : Application
 
         // Core services
         services.AddSingleton<ISettingsService, SettingsService>();
+        services.AddSingleton<IResourceLoader, ResourceLoader>();
         services.AddSingleton<IPromptLoader, PromptLoader>();
         services.AddSingleton<IPriceEstimator, PriceEstimator>();
         services.AddSingleton<IOpenAIService, OpenAIService>();
