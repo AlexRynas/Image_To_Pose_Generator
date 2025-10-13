@@ -1,0 +1,76 @@
+name: "Bug report (with logs)"
+description: "Report a bug and attach your ImageToPose logs"
+title: "[bug]: <short summary>"
+labels: ["bug"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Thank you!** Please attach at least one `.log` file from:
+
+        - `%LOCALAPPDATA%\Temp\ImageToPose\logs`
+        - e.g. `C:\Users\<your_name>\AppData\Local\Temp\ImageToPose\logs`
+
+        👉 Drag & drop the file(s) into the issue editor **below** before submitting.
+        If the file is large, please ZIP it first.
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I searched existing issues and couldn’t find this.
+          required: true
+        - label: I **attached** at least one log file from the folder above.
+          required: true
+
+  - type: input
+    id: app-version
+    attributes:
+      label: App version / build
+      description: e.g., app About box version or commit SHA
+      placeholder: "v0.5.1 (commit abc1234)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows 11
+        - Windows 10
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Be as precise as possible (what you clicked, expected vs. actual).
+      placeholder: |
+        1. …
+        2. …
+        3. …
+    validations:
+      required: true
+
+  - type: textarea
+    id: log-snippet
+    attributes:
+      label: Optional — paste last ~100 lines of the log
+      description: This helps even if the attachment fails.
+      render: text
+      placeholder: |
+        (Open the latest .log in a text editor and copy the tail here)
+    validations:
+      required: false
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context / screenshots
+      description: You can drag & drop images or more files here.
+      render: text
