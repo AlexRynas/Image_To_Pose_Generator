@@ -100,8 +100,6 @@ The app shows **real-time cost estimates** before API calls, calculated using:
 - ✅ API calls go directly to OpenAI - no third-party servers
 - ⚠️ API usage charges apply (you provide your own key)
 
-See the [Blender Workflow Guide](src/DesktopApp/ImageToPose.Desktop/Assets/BlenderWorkflow.md) for applying generated poses.
-
 ## Building from Source
 
 ```bash
@@ -116,44 +114,7 @@ The executable will be in `bin/Release/net9.0/win-x64/publish/`.
 
 ## Blender Workflow
 
-### Usage
-
-1. **Export Armature Data** (optional):
-   ```python
-   exec(open("armature_exporter.py").read())
-   ```
-
-2. **Analyze Reference Image**: Use `analyse_image_and_get_pose_description_prompt.txt`
-
-3. **Generate Rotations**: Use `chatgpt_prompt.txt` for bone rotations
-
-4. **Apply Pose**: Update `POSE_DEGREES` in `apply_pose_template.py` and run in Blender
-
-### Example Format
-
-```python
-POSE_DEGREES = {
-    "Hips":   [0.0, 0.0, 5.0],
-    "Spine":  [0.0, 0.0, -2.0],
-    "Head":   [10.0, -5.0, 15.0],
-    "LeftArm": [45.0, -30.0, 20.0],
-}
-```
-
-### Rotation Conventions
-
-- **Spine/Torso**: X=left/right lean, Y=back/forward lean, Z=twist
-- **Arms**: X=forward/back, Y=backward, Z=up
-- **Legs**: Hip mechanics vary by side
-- **Joints**: Y=hinge rotation (elbows, knees)
-
-See `chatgpt_prompt.txt` for complete conventions.
-
-### Configuration
-
-- `SWAP_LR`: Flip left/right for mirrored references
-- `AUTO_HINGE`: Auto-detect hinge joints from constraints
-- `ARMATURE_NAME`: Change if armature name differs
+See the [Blender Workflow Guide](src/DesktopApp/ImageToPose.Desktop/Assets/BlenderWorkflow.md) for applying generated poses.
 
 ## Troubleshooting
 

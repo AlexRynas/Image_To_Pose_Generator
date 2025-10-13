@@ -2,7 +2,7 @@
 
 This guide explains how to apply the generated bone rotations from the Image To Pose Generator to an MPFB GameEngine rig in Blender, and how to retarget them to a Cyberpunk 2077 character rig.
 
-> **Note:** This guide assumes you've already generated bone rotations using either the desktop application or Python scripts. See the main [README.md](../README.md) for generation instructions.
+> **Note:** This guide assumes you've already generated bone rotations using either the desktop application or Python scripts. See the main [README.md](../../../../../README.md) for generation instructions.
 
 ## Prerequisites
 
@@ -51,6 +51,21 @@ This guide explains how to apply the generated bone rotations from the Image To 
    - Switch the armature to Pose Mode
    - Apply all bone rotations from the POSE_DEGREES dictionary
    - Leave the armature in Pose Mode for you to review
+
+### Rotation Conventions
+
+- **Spine/Torso**: X=left/right lean, Y=back/forward lean, Z=twist
+- **Arms**: X=forward/back, Y=backward, Z=up
+- **Legs**: Hip mechanics vary by side
+- **Joints**: Y=hinge rotation (elbows, knees)
+
+See `chatgpt_prompt.txt` for complete conventions.
+
+### Configuration
+
+- `SWAP_LR`: Flip left/right for mirrored references
+- `AUTO_HINGE`: Auto-detect hinge joints from constraints
+- `ARMATURE_NAME`: Change if armature name differs
 
 ### Manual Application
 
