@@ -118,6 +118,8 @@ https://docs.google.com/document/d/1nHPQvkK6ijwb8iQ8y1X8CBG-wnNUCTYCjrdUCGMenW4/
 https://docs.google.com/document/d/1e7NsVgWHH19mTNw60E3H3u7G3Rlw3dUVWzLUHGvBUwY/edit?tab=t.0
 https://wiki.redmodding.org/cyberpunk-2077-modding/modding-guides/animations/animations
 
+https://drive.google.com/file/d/1ifzMpMfCNK0mJABz56YDfw-2JcMjswDE/view?usp=sharing
+An archive with xBaebsae/Zwei multibody rigs
 
 ## Step 3: Fine-Tuning and Export
 
