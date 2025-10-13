@@ -31,7 +31,7 @@ This guide explains how to apply the generated bone rotations from the Image To 
 
 ### Applying via Python Script
 
-1. Open the `apply_pose_template.py` script from the repository
+1. Open the [apply_pose_template.py](./apply_pose_template.py) script from the repository
 2. Replace the `POSE_DEGREES` dictionary with your generated data:
    ```python
    POSE_DEGREES = {
@@ -44,7 +44,7 @@ This guide explains how to apply the generated bone rotations from the Image To 
 3. In Blender:
    - Select your armature with the MPFB GameEngine rig
    - Open the Scripting workspace
-   - Load the `apply_pose_template.py` script
+   - Load the [apply_pose_template.py](./apply_pose_template.py) script
    - Run the script (Alt+P or click the ? button)
 
 4. The script will:
@@ -59,7 +59,7 @@ This guide explains how to apply the generated bone rotations from the Image To 
 - **Legs**: Hip mechanics vary by side
 - **Joints**: Y=hinge rotation (elbows, knees)
 
-See `chatgpt_prompt.txt` for complete conventions.
+See [chatgpt_prompt.txt](./chatgpt_prompt.txt) for complete conventions.
 
 ### Configuration
 
@@ -106,31 +106,18 @@ The MPFB GameEngine rig uses different bone naming and hierarchy than Cyberpunk 
 
 Several Blender addons can help with retargeting between different rig types:
 
+- **Blender-Animation-Retargeting** - Free addon with retargeting features that I use
+Use [MPFB_GameEngine_To_C2077_Rig_Retarget_Preset.blend-retarget](./MPFB_GameEngine_To_C2077_Rig_Retarget_Preset.blend-retarget) bone mapping template for this addon
 - **Rokoko Studio Live** - Free addon with retargeting features
 - **Auto-Rig Pro** - Paid addon with advanced retargeting
 - **BlenRig** - Free rigging system with retargeting tools
 
-### Option C: Manual Retargeting
+Useful guides:
+https://docs.google.com/document/d/1CrPTKiGJzy2Tj_klJVHhRdXZgqD7yC2ZsJuRu9nqQuc/edit?tab=t.0
+https://docs.google.com/document/d/1nHPQvkK6ijwb8iQ8y1X8CBG-wnNUCTYCjrdUCGMenW4/edit?tab=t.0#heading=h.kvak42tu0v94
+https://docs.google.com/document/d/1e7NsVgWHH19mTNw60E3H3u7G3Rlw3dUVWzLUHGvBUwY/edit?tab=t.0
+https://wiki.redmodding.org/cyberpunk-2077-modding/modding-guides/animations/animations
 
-Create a bone mapping between MPFB and CP2077 rigs:
-
-```
-MPFB GameEngine ? CP2077
----------------------------------
-pelvis ? Root
-spine_01 ? Spine1
-spine_02 ? Spine2
-spine_03 ? Spine3
-neck_01 ? Neck
-head ? Head
-clavicle_l ? LeftClavicle
-upperarm_l ? LeftUpperArm
-lowerarm_l ? LeftForearm
-hand_l ? LeftHand
-(and so on...)
-```
-
-Then manually copy rotation values or use a Python script to automate the transfer.
 
 ## Step 3: Fine-Tuning and Export
 
@@ -180,49 +167,6 @@ Then manually copy rotation values or use a Python script to automate the transf
 - **"No active object":** Make sure an armature is selected
 - **Permission errors:** Make sure Blender has permission to run scripts
 
-## Future Enhancements
-
-The following features are planned or could be added:
-
-### Automated Retargeting
-
-- **Python script for direct retargeting:** Create a script that:
-  - Takes the POSE_DEGREES dictionary
-  - Maps MPFB bones to CP2077 bones automatically
-  - Applies rotations with adjustment factors for proportion differences
-  - Handles bone hierarchy differences
-
-### Headless Blender Export
-
-- **Command-line tool:**  
-  ```bash
-  blender --background --python auto_pose.py -- \
-    --input pose_rotations.json \
-    --rig-type cp2077 \
-    --character MyCharacter.blend \
-    --output posed_character.fbx
-  ```
-
-### Blender Addon
-
-- Create a full Blender addon with UI panel that:
-  - Imports pose JSON directly
-  - Provides preset mappings for popular game rigs
-  - Offers visual preview before applying
-  - Batch processes multiple poses
-
-### Pose Library Integration
-
-- Integrate with Blender's Asset Browser
-- Create tagged pose collections
-- Share poses across projects
-
-### Real-time Preview
-
-- Desktop app could show a 3D preview of the rig with rotations applied
-- Use a lightweight viewer (Three.js or similar)
-- Adjust rotations interactively before export
-
 ## Resources
 
 ### Blender Documentation
@@ -240,15 +184,6 @@ The following features are planned or could be added:
 
 - [CP2077 Modding Wiki](https://wiki.redmodding.org/)
 - [CP2077 Modding Discord](https://discord.gg/redmodding)
-
-## Contributing
-
-If you develop improvements to this workflow:
-
-- Share your retargeting scripts in the repository
-- Document any CP2077-specific export settings
-- Create tutorials or video guides
-- Report issues or suggest enhancements via GitHub Issues
 
 ## License
 
