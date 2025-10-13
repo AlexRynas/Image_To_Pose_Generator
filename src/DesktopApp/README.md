@@ -2,29 +2,6 @@
 
 A Windows desktop application for generating character poses from reference images using AI.
 
-## Overview
-
-This application provides a user-friendly wizard interface that guides you through:
-1. Providing your OpenAI API key
-2. Selecting operating mode (Budget/Balanced/Quality)
-3. Selecting a reference image and describing the pose
-4. AI-powered analysis to create an extended pose description
-5. Review and refinement of the pose description
-6. Generation of bone rotations for MPFB GameEngine rigs
-7. Export as JSON for use in Blender
-
-## Features
-
-- **Complete wizard flow**: Welcome → API Key → Mode Selection → Input → Review → Generate
-- **Three operating modes**: Budget, Balanced, and Quality with different model preferences
-- **Real-time cost estimation**: See estimated API costs before making calls using SharpToken
-- **Intelligent model selection**: Automatic fallback to available models based on your API key
-- **Model probing**: Tests models before use to ensure compatibility
-- **Image preview**: Thumbnail display of selected reference image
-- **Editable descriptions**: Review and modify AI-generated pose descriptions
-- **JSON export**: Copy to clipboard or save as file
-- **Single executable**: Self-contained deployment
-
 ## Building the Application
 
 ### Prerequisites
@@ -88,16 +65,11 @@ src/DesktopApp/
 │   ├── Views/                      # XAML views for wizard steps
 │   │   ├── WelcomeView.axaml
 │   │   ├── ApiKeyView.axaml
-│   │   ├── InputView.axaml
-│   │   ├── ReviewView.axaml
-│   │   └── GenerateView.axaml
+│   │   ├── ***
 │   ├── ViewModels/                 # View models with business logic
 │   │   ├── WizardViewModel.cs
 │   │   ├── ApiKeyViewModel.cs
-│   │   ├── ModeSelectionViewModel.cs
-│   │   ├── InputViewModel.cs
-│   │   ├── ReviewViewModel.cs
-│   │   └── GenerateViewModel.cs
+│   │   ├── ***
 │   ├── Services/                   # Platform-specific implementations
 │   │   ├── FileService.cs
 │   │   ├── ThemeService.cs
@@ -108,21 +80,15 @@ src/DesktopApp/
 │   ├── Models/                     # Data models
 │   │   ├── BoneRotation.cs
 │   │   ├── ExtendedPose.cs
-│   │   ├── OpenAIOptions.cs
-│   │   ├── OperatingMode.cs
-│   │   ├── PoseInput.cs
-│   │   ├── PoseRig.cs
-│   │   └── PricingModelRates.cs
+│   │   ├── ***
 │   └── Services/                   # Service interfaces and implementations
 │       ├── IOpenAIService.cs
 │       ├── IOpenAIErrorHandler.cs
-│       ├── IPromptLoader.cs
-│       ├── ISettingsService.cs
-│       └── IPriceEstimator.cs
+│       ├── ***
 └── ImageToPose.Tests/              # Unit tests
     ├── PoseRigParsingTests.cs
     ├── PricingEstimatorTests.cs
-    └── ModeSelectionIntegrationTests.cs
+    └── ***
 ```
 
 ## Key Dependencies
@@ -157,76 +123,6 @@ dotnet test ImageToPose.Tests
 - Follow C# naming conventions
 - Use async/await for I/O operations
 - Include XML documentation comments for public APIs
-
-## Operating Modes
-
-The application supports three operating modes, each with different model preferences:
-
-1. **Budget Mode**: Uses `gpt-4.1-nano` (fallback: `gpt-4.1-mini`)
-2. **Balanced Mode**: Uses `gpt-4.1-mini` (fallbacks: `o4-mini`, `gpt-4.1`)
-3. **Quality Mode**: Uses `gpt-4.1` (fallback: `o4-mini`)
-
-The mode selection includes cost estimation using SharpToken for token counting.
-
-## Configuration
-
-### API Key Storage
-
-By default, the API key is stored **in memory only** for the current session. To add persistent storage:
-
-1. Implement secure storage in `ISettingsService`
-2. Use Windows Credential Manager or similar secure storage
-3. Add UI toggle for "Remember API key" option
-
-### Model Selection
-
-Models are automatically selected based on:
-- The chosen operating mode
-- Available models from the API key
-- Successful model probing
-
-### Pricing Configuration
-
-Pricing rates are stored in `config/pricing.json` and can be updated by the user. The file is auto-generated with default rates on first run.
-
-## Troubleshooting
-
-### Build Errors
-
-**"Avalonia templates not found":**
-```bash
-dotnet new install Avalonia.Templates
-```
-
-**"OpenAI namespace not found":**
-```bash
-dotnet restore
-```
-
-### Runtime Errors
-
-**"Could not find prompt files":**
-- Ensure `analyse_image_and_get_pose_description_prompt.txt` and `chatgpt_prompt.txt` are in the repository root
-- The app searches up to 10 directory levels from the executable
-
-**"API key validation fails":**
-- Check internet connection
-- Verify the API key is valid on [OpenAI Platform](https://platform.openai.com/api-keys)
-- Check for API usage limits or billing issues
-
-**"Model not available":**
-- The app will automatically fall back to available models
-- Check the displayed model in the UI to see which was selected
-
-## Contributing
-
-When adding features or fixing bugs:
-
-1. Create a feature branch
-2. Add tests for new functionality
-3. Ensure all tests pass
-4. Update documentation
-5. Submit a pull request
 
 ## License
 
