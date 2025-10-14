@@ -52,11 +52,11 @@ public static class OpenAIModelExtensions
         var caps = new Dictionary<OpenAIModel, ModelCapability>
         {
             [OpenAIModel.Gpt41Nano] = new ModelCapability(SupportsLogProbs: true),
-            [OpenAIModel.Gpt41Mini] = new ModelCapability(SupportsLogProbs: false),
-            [OpenAIModel.Gpt41] = new ModelCapability(SupportsLogProbs: false),
+            [OpenAIModel.Gpt41Mini] = new ModelCapability(SupportsLogProbs: true),
+            [OpenAIModel.Gpt41] = new ModelCapability(SupportsLogProbs: true),
             [OpenAIModel.O4Mini] = new ModelCapability(SupportsLogProbs: false),
             [OpenAIModel.Gpt5] = new ModelCapability(SupportsLogProbs: false),
-            [OpenAIModel.O3] = new ModelCapability(SupportsLogProbs: true)
+            [OpenAIModel.O3] = new ModelCapability(SupportsLogProbs: false)
         };
         _capabilities = new ReadOnlyDictionary<OpenAIModel, ModelCapability>(caps);
         All = Array.AsReadOnly(allValues);
