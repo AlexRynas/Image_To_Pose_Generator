@@ -230,11 +230,13 @@ public class OpenAIService : IOpenAIService
             temperature = 1.0f; // Use default for O-series models
         }
 
-        // Check if model supports logprobs
-        if (IsGptModel(model))
+        // Enable logprobs only when explicitly supported by our capability map
+        var requestedLogProbs = false;
+        if (OpenAIModelExtensions.SupportsLogProbs(model))
         {
             chatOptions.IncludeLogProbabilities = true;
             chatOptions.TopLogProbabilityCount = 3;
+            requestedLogProbs = true;
         }
 
         OpenAIServiceLogs.SendingVisionRequest(_logger, model);
@@ -272,7 +274,8 @@ public class OpenAIService : IOpenAIService
                 {
                     ["operation"] = "AnalyzePose",
                     ["imagePath"] = Path.GetFileName(input.ImagePath),
-                    ["anchors"] = anchorsBlock
+                    ["anchors"] = anchorsBlock,
+                    ["requestedLogProbs"] = requestedLogProbs
                 },
                 new Dictionary<string, object?>(),
                 error,
@@ -292,7 +295,8 @@ public class OpenAIService : IOpenAIService
             {
                 ["operation"] = "AnalyzePose",
                 ["imagePath"] = Path.GetFileName(input.ImagePath),
-                ["anchors"] = anchorsBlock
+                ["anchors"] = anchorsBlock,
+                ["requestedLogProbs"] = requestedLogProbs
             },
             new Dictionary<string, object?>
             {
@@ -353,11 +357,13 @@ public class OpenAIService : IOpenAIService
             temperature = 1.0f; // Use default for O-series models
         }
 
-        // Check if model supports logprobs
-        if (IsGptModel(model))
+        // Enable logprobs only when explicitly supported by our capability map
+        var requestedLogProbsGen = false;
+        if (OpenAIModelExtensions.SupportsLogProbs(model))
         {
             chatOptions.IncludeLogProbabilities = true;
             chatOptions.TopLogProbabilityCount = 3;
+            requestedLogProbsGen = true;
         }
 
         OpenAIServiceLogs.SendingGenerateRequest(_logger, model);
@@ -397,7 +403,8 @@ public class OpenAIService : IOpenAIService
                 new Dictionary<string, object?>
                 {
                     ["operation"] = "GenerateRig",
-                    ["inputLength"] = extendedPoseText.Length
+                    ["inputLength"] = extendedPoseText.Length,
+                    ["requestedLogProbs"] = requestedLogProbsGen
                 },
                 new Dictionary<string, object?>(),
                 error,
@@ -416,7 +423,8 @@ public class OpenAIService : IOpenAIService
             new Dictionary<string, object?>
             {
                 ["operation"] = "GenerateRig",
-                ["inputLength"] = extendedPoseText.Length
+                ["inputLength"] = extendedPoseText.Length,
+                ["requestedLogProbs"] = requestedLogProbsGen
             },
             new Dictionary<string, object?>
             {
@@ -555,12 +563,6 @@ public class OpenAIService : IOpenAIService
 
         _chosenModel = picked;
         return picked;
-    }
-
-    private static bool IsGptModel(string modelId)
-    {
-        var lower = modelId.ToLowerInvariant();
-        return lower.StartsWith("gpt-");
     }
 
     private static bool IsOSeriesModel(string modelId)

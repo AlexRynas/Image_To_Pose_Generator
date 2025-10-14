@@ -31,6 +31,7 @@ public static class OpenAIModelExtensions
 {
     private static readonly IReadOnlyDictionary<OpenAIModel, string> _idByModel;
     private static readonly IReadOnlyDictionary<string, OpenAIModel> _modelById;
+    private static readonly IReadOnlyDictionary<OpenAIModel, ModelCapability> _capabilities;
 
     static OpenAIModelExtensions()
     {
@@ -46,7 +47,18 @@ public static class OpenAIModelExtensions
         _idByModel = new ReadOnlyDictionary<OpenAIModel, string>(idByModel);
         _modelById = new ReadOnlyDictionary<string, OpenAIModel>(
             idByModel.ToDictionary(kvp => kvp.Value, kvp => kvp.Key, StringComparer.OrdinalIgnoreCase));
-
+        // Capability matrix derived from OpenAI model documentation.
+        // Conservative defaults: many o-series and 4.1-family models do not allow token logprobs.
+        var caps = new Dictionary<OpenAIModel, ModelCapability>
+        {
+            [OpenAIModel.Gpt41Nano] = new ModelCapability(SupportsLogProbs: true),
+            [OpenAIModel.Gpt41Mini] = new ModelCapability(SupportsLogProbs: false),
+            [OpenAIModel.Gpt41] = new ModelCapability(SupportsLogProbs: false),
+            [OpenAIModel.O4Mini] = new ModelCapability(SupportsLogProbs: false),
+            [OpenAIModel.Gpt5] = new ModelCapability(SupportsLogProbs: false),
+            [OpenAIModel.O3] = new ModelCapability(SupportsLogProbs: true)
+        };
+        _capabilities = new ReadOnlyDictionary<OpenAIModel, ModelCapability>(caps);
         All = Array.AsReadOnly(allValues);
     }
 
@@ -70,7 +82,15 @@ public static class OpenAIModelExtensions
         var member = typeof(OpenAIModel).GetField(model.ToString(), BindingFlags.Public | BindingFlags.Static);
         return member?.GetCustomAttribute<EnumMemberAttribute>()?.Value;
     }
+
+    public static bool SupportsLogProbs(this OpenAIModel model)
+        => _capabilities.TryGetValue(model, out var cap) && cap.SupportsLogProbs;
+
+    public static bool SupportsLogProbs(string modelId)
+        => TryParse(modelId, out var m) && m.SupportsLogProbs();
 }
+
+public readonly record struct ModelCapability(bool SupportsLogProbs);
 
 public static class ModeModelMap
 {
