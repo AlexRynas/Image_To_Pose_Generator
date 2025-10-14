@@ -9,13 +9,11 @@ body:
       value: |
         **Thank you!** Please attach log files from:
 
-        **Application Logs:**
-        - `%LOCALAPPDATA%\Temp\ImageToPose\logs`
-        - e.g. `C:\Users\<your_name>\AppData\Local\Temp\ImageToPose\logs`
-
-        **AI Diagnostics Logs (if the issue involves AI/model errors):**
-        - `%LOCALAPPDATA%\ImageToPose\logs\ai_diagnostics`
-        - e.g. `C:\Users\<your_name>\AppData\Local\ImageToPose\logs\ai_diagnostics\<date>\<timestamp>.json`
+        **All Logs (Application + AI Diagnostics):**
+        - `%LOCALAPPDATA%\ImageToPose\logs`
+        - e.g. `C:\Users\<your_name>\AppData\Local\ImageToPose\logs`
+          - Application logs: `app-*.log`
+          - AI diagnostics: `ai_diagnostics\<date>\<timestamp>.json`
 
         👉 Drag & drop the file(s) into the issue editor **below** before submitting.
         If files are large, please ZIP them first.
@@ -27,10 +25,8 @@ body:
       options:
         - label: I searched existing issues and couldn't find this.
           required: true
-        - label: I **attached** at least one application log file from the folder above.
+        - label: I **attached** at least one log file from the folder above.
           required: true
-        - label: I **attached** AI diagnostics logs (if the issue involves model/AI errors).
-          required: false
 
   - type: input
     id: app-version
@@ -67,11 +63,11 @@ body:
   - type: textarea
     id: log-snippet
     attributes:
-      label: Optional — paste last ~100 lines of the application log
+      label: Optional — paste last ~100 lines of the log
       description: This helps even if the attachment fails. For AI diagnostics, you can paste the full JSON content.
       render: text
       placeholder: |
-        (Open the latest .log or .json in a text editor and copy the tail here)
+        (Open the latest .log or .json in a text editor and copy here)
     validations:
       required: false
 

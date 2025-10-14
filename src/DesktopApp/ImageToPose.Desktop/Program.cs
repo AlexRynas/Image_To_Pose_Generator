@@ -42,8 +42,8 @@ sealed class Program
 
     private static void ConfigureSerilog()
     {
-        var tempPath = Path.GetTempPath();
-        var logPath = Path.Combine(tempPath, "ImageToPose", "logs", "app-.log");
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var logPath = Path.Combine(localAppData, "ImageToPose", "logs", "app-.log");
 
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
