@@ -3,6 +3,7 @@ using ImageToPose.Core.Models;
 using OpenAI;
 using OpenAI.Chat;
 using Microsoft.Extensions.Logging;
+using System.ClientModel;
 
 namespace ImageToPose.Core.Services;
 
@@ -29,6 +30,7 @@ public class OpenAIService : IOpenAIService
     private readonly IPromptLoader _promptLoader;
     private readonly IPriceEstimator _priceEstimator;
     private readonly IOpenAIErrorHandler _errorHandler;
+    private readonly DiagnosticsLogger _diagnosticsLogger;
 
     // Session-scoped cache so we resolve models once
     private string? _chosenModel;
@@ -38,9 +40,9 @@ public class OpenAIService : IOpenAIService
 
     public OpenAIService(
         ILogger<OpenAIService> logger,
-        ISettingsService settingsService, 
-        IPromptLoader promptLoader, 
-        IPriceEstimator priceEstimator, 
+        ISettingsService settingsService,
+        IPromptLoader promptLoader,
+        IPriceEstimator priceEstimator,
         IOpenAIErrorHandler errorHandler)
     {
         _logger = logger;
@@ -48,7 +50,8 @@ public class OpenAIService : IOpenAIService
         _promptLoader = promptLoader ?? throw new ArgumentNullException(nameof(promptLoader));
         _priceEstimator = priceEstimator ?? throw new ArgumentNullException(nameof(priceEstimator));
         _errorHandler = errorHandler ?? throw new ArgumentNullException(nameof(errorHandler));
-        
+        _diagnosticsLogger = new DiagnosticsLogger(logger);
+
         OpenAIServiceLogs.ServiceInitialized(_logger);
     }
 
@@ -56,7 +59,7 @@ public class OpenAIService : IOpenAIService
     {
         using var _ = _logger.BeginScope(new Dictionary<string, object> { ["Operation"] = "ValidateApiKey" });
         OpenAIServiceLogs.ValidatingApiKey(_logger);
-        
+
         if (string.IsNullOrWhiteSpace(apiKey))
         {
             OpenAIServiceLogs.ApiKeyEmpty(_logger);
@@ -74,7 +77,7 @@ public class OpenAIService : IOpenAIService
 
             // Try resolve according to selected mode
             var picked = await PickBestModelAsync(root, available, overrideModelId: null, cancellationToken);
-            
+
             // If no model is available for the current mode, still validate key but don't cache a model
             // This allows the key validation to succeed even if mode-specific models aren't available
             if (picked is not null)
@@ -86,7 +89,7 @@ public class OpenAIService : IOpenAIService
             {
                 OpenAIServiceLogs.ApiKeyValidatedNoModel(_logger);
             }
-            
+
             // Key is valid if we can list models, even if none match the current mode
             return available.Count > 0;
         }
@@ -99,14 +102,14 @@ public class OpenAIService : IOpenAIService
 
     public async Task<string> ResolveModelAsync(string? overrideModelId = null, CancellationToken cancellationToken = default)
     {
-        using var _ = _logger.BeginScope(new Dictionary<string, object> 
-        { 
+        using var _ = _logger.BeginScope(new Dictionary<string, object>
+        {
             ["Operation"] = "ResolveModel",
             ["Mode"] = SelectedMode.ToString()
         });
-        
+
         OpenAIServiceLogs.ResolvingModel(_logger, SelectedMode.ToString());
-        
+
         var options = _settingsService.GetOpenAIOptions();
         if (string.IsNullOrWhiteSpace(options.ApiKey))
         {
@@ -118,7 +121,7 @@ public class OpenAIService : IOpenAIService
         if (!string.IsNullOrWhiteSpace(_chosenModel) && string.IsNullOrWhiteSpace(overrideModelId))
         {
             var priority = ModeModelMap.GetPriorityList(SelectedMode);
-            if (OpenAIModelExtensions.TryParse(_chosenModel, out var cachedModel) 
+            if (OpenAIModelExtensions.TryParse(_chosenModel, out var cachedModel)
                 && priority.Contains(cachedModel))
             {
                 // Cached model is appropriate for current mode, reuse it
@@ -135,21 +138,21 @@ public class OpenAIService : IOpenAIService
         var modelsPage = await modelClient.GetModelsAsync(cancellationToken);
         var available = modelsPage.Value.Select(m => m.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var picked = await PickBestModelAsync(root, available, overrideModelId, cancellationToken);
-        
+
         if (picked is null)
         {
             // Build helpful error message based on selected mode
             var priority = ModeModelMap.GetPriorityList(SelectedMode);
             var requiredModels = string.Join(" or ", priority.Select(m => m.GetModelId()));
             var modeName = SelectedMode.ToString();
-            
+
             OpenAIServiceLogs.NoCompatibleModel(_logger, modeName, requiredModels);
             throw new InvalidOperationException(
                 $"No compatible models available for {modeName} mode. " +
                 $"Your API key needs access to: {requiredModels}. " +
                 $"Please check your OpenAI account or select a different mode.");
         }
-        
+
         _chosenModel = picked;
         OpenAIServiceLogs.ModelResolved(_logger, picked);
         return picked;
@@ -162,9 +165,9 @@ public class OpenAIService : IOpenAIService
             ["Operation"] = "AnalyzePose",
             ["ImagePath"] = input?.ImagePath ?? "null"
         });
-        
+
         OpenAIServiceLogs.AnalyzingPose(_logger, input?.ImagePath ?? "null");
-        
+
         if (input is null) throw new ArgumentNullException(nameof(input));
         if (string.IsNullOrWhiteSpace(input.ImagePath))
             throw new ArgumentException("Image path cannot be empty", nameof(input.ImagePath));
@@ -211,30 +214,92 @@ public class OpenAIService : IOpenAIService
             };
 
         var chat = client.GetChatClient(model);
+        var temperature = 0.3f;
         var chatOptions = new ChatCompletionOptions
         {
-            Temperature = 0.3f,
+            Temperature = temperature,
             MaxOutputTokenCount = 1000
         };
 
-        OpenAIServiceLogs.SendingVisionRequest(_logger, model);
-        var response = await chat.CompleteChatAsync(messages, chatOptions, cancellationToken);
-        var content = response?.Value?.Content?.FirstOrDefault()?.Text ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(content))
+        // Check if model supports logprobs
+        if (IsGptModel(model))
         {
-            OpenAIServiceLogs.EmptyResponse(_logger);
-            throw new InvalidOperationException("OpenAI returned an empty response");
+            chatOptions.IncludeLogProbabilities = true;
+            chatOptions.TopLogProbabilityCount = 3;
         }
 
-        OpenAIServiceLogs.PoseAnalysisComplete(_logger, content.Length);
-        return new ExtendedPose { Text = content.Trim() };
+        OpenAIServiceLogs.SendingVisionRequest(_logger, model);
+
+        var startedAt = DateTimeOffset.UtcNow;
+        string? content = null;
+        ClientResult<ChatCompletion>? response = null;
+        OpenAIErrorInfo? error = null;
+
+        try
+        {
+            response = await chat.CompleteChatAsync(messages, chatOptions, cancellationToken);
+            content = response?.Value?.Content?.FirstOrDefault()?.Text ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                OpenAIServiceLogs.EmptyResponse(_logger);
+                throw new InvalidOperationException("OpenAI returned an empty response");
+            }
+
+            OpenAIServiceLogs.PoseAnalysisComplete(_logger, content.Length);
+        }
+        catch (Exception ex)
+        {
+            error = _errorHandler.Translate(ex);
+
+            // Write diagnostics even on error
+            await WriteDiagnosticsAsync(
+                startedAt,
+                model,
+                temperature,
+                null,
+                null,
+                new Dictionary<string, object?>
+                {
+                    ["operation"] = "AnalyzePose",
+                    ["imagePath"] = Path.GetFileName(input.ImagePath),
+                    ["anchors"] = anchorsBlock
+                },
+                new Dictionary<string, object?>(),
+                error,
+                cancellationToken);
+
+            throw;
+        }
+
+        // Write diagnostics on success
+        await WriteDiagnosticsAsync(
+            startedAt,
+            model,
+            temperature,
+            response,
+            null,
+            new Dictionary<string, object?>
+            {
+                ["operation"] = "AnalyzePose",
+                ["imagePath"] = Path.GetFileName(input.ImagePath),
+                ["anchors"] = anchorsBlock
+            },
+            new Dictionary<string, object?>
+            {
+                ["contentLength"] = content?.Length ?? 0
+            },
+            null,
+            cancellationToken);
+
+        return new ExtendedPose { Text = content!.Trim() };
     }
 
     public async Task<PoseRig> GenerateRigAsync(string extendedPoseText, CancellationToken cancellationToken = default)
     {
         using var _ = _logger.BeginScope(new Dictionary<string, object> { ["Operation"] = "GenerateRig" });
         OpenAIServiceLogs.GeneratingRig(_logger, extendedPoseText.Length);
-        
+
         if (string.IsNullOrWhiteSpace(extendedPoseText))
             throw new ArgumentException("Extended pose text cannot be empty", nameof(extendedPoseText));
 
@@ -263,25 +328,87 @@ public class OpenAIService : IOpenAIService
             };
 
         var chat = client.GetChatClient(model);
+        var temperature = 0.2f;
         var chatOptions = new ChatCompletionOptions
         {
-            Temperature = 0.2f,
+            Temperature = temperature,
             MaxOutputTokenCount = 2000
         };
 
-        OpenAIServiceLogs.SendingGenerateRequest(_logger, model);
-        var response = await chat.CompleteChatAsync(messages, chatOptions, cancellationToken);
-        var content = response?.Value?.Content?.FirstOrDefault()?.Text ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(content))
+        // Check if model supports logprobs
+        if (IsGptModel(model))
         {
-            OpenAIServiceLogs.EmptyResponse(_logger);
-            throw new InvalidOperationException("OpenAI returned an empty response");
+            chatOptions.IncludeLogProbabilities = true;
+            chatOptions.TopLogProbabilityCount = 3;
         }
 
-        OpenAIServiceLogs.ParsingPoseRig(_logger);
-        var rig = ParsePoseRig(content);
-        OpenAIServiceLogs.RigGenerated(_logger, rig.Bones.Count);
-        return rig;
+        OpenAIServiceLogs.SendingGenerateRequest(_logger, model);
+
+        var startedAt = DateTimeOffset.UtcNow;
+        string? content = null;
+        ClientResult<ChatCompletion>? response = null;
+        OpenAIErrorInfo? error = null;
+        PoseRig? rig = null;
+
+        try
+        {
+            response = await chat.CompleteChatAsync(messages, chatOptions, cancellationToken);
+            content = response?.Value?.Content?.FirstOrDefault()?.Text ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                OpenAIServiceLogs.EmptyResponse(_logger);
+                throw new InvalidOperationException("OpenAI returned an empty response");
+            }
+
+            OpenAIServiceLogs.ParsingPoseRig(_logger);
+            rig = ParsePoseRig(content);
+            OpenAIServiceLogs.RigGenerated(_logger, rig.Bones.Count);
+        }
+        catch (Exception ex)
+        {
+            error = _errorHandler.Translate(ex);
+
+            // Write diagnostics even on error
+            await WriteDiagnosticsAsync(
+                startedAt,
+                model,
+                temperature,
+                null,
+                null,
+                new Dictionary<string, object?>
+                {
+                    ["operation"] = "GenerateRig",
+                    ["inputLength"] = extendedPoseText.Length
+                },
+                new Dictionary<string, object?>(),
+                error,
+                cancellationToken);
+
+            throw;
+        }
+
+        // Write diagnostics on success
+        await WriteDiagnosticsAsync(
+            startedAt,
+            model,
+            temperature,
+            response,
+            null,
+            new Dictionary<string, object?>
+            {
+                ["operation"] = "GenerateRig",
+                ["inputLength"] = extendedPoseText.Length
+            },
+            new Dictionary<string, object?>
+            {
+                ["boneCount"] = rig?.Bones.Count ?? 0,
+                ["contentLength"] = content?.Length ?? 0
+            },
+            null,
+            cancellationToken);
+
+        return rig!;
     }
 
     public async Task<PricingModelRates?> GetResolvedModelRatesAsync(CancellationToken cancellationToken = default)
@@ -345,7 +472,7 @@ public class OpenAIService : IOpenAIService
     private async Task<string?> PickBestModelAsync(OpenAIClient root, HashSet<string> available, string? overrideModelId, CancellationToken cancellationToken)
     {
         var priority = ModeModelMap.GetPriorityList(SelectedMode);
-        
+
         // If user forces a model id, try it first IF it's in the current mode's priority list
         if (!string.IsNullOrWhiteSpace(overrideModelId)
             && OpenAIModelExtensions.TryParse(overrideModelId, out var overrideModel)
@@ -394,14 +521,14 @@ public class OpenAIService : IOpenAIService
         var available = modelsPage.Value.Select(m => m.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         var picked = await PickBestModelAsync(root, available, overrideModelId: null, cancellationToken);
-        
+
         if (picked is null)
         {
             // Build helpful error message
             var priority = ModeModelMap.GetPriorityList(SelectedMode);
             var requiredModels = string.Join(" or ", priority.Select(m => m.GetModelId()));
             var modeName = SelectedMode.ToString();
-            
+
             throw new InvalidOperationException(
                 $"No models available for {modeName} mode. " +
                 $"Required: {requiredModels}. " +
@@ -410,6 +537,115 @@ public class OpenAIService : IOpenAIService
 
         _chosenModel = picked;
         return picked;
+    }
+
+    private static bool IsGptModel(string modelId)
+    {
+        var lower = modelId.ToLowerInvariant();
+        return lower.StartsWith("gpt-");
+    }
+
+    private static bool IsOSeriesModel(string modelId)
+    {
+        var lower = modelId.ToLowerInvariant();
+        return lower.StartsWith("o3") || lower.StartsWith("o4");
+    }
+
+    private async Task WriteDiagnosticsAsync(
+        DateTimeOffset startedAt,
+        string model,
+        float temperature,
+        ClientResult<ChatCompletion>? response,
+        object? responsesApiData,
+        Dictionary<string, object?> requestMetadata,
+        Dictionary<string, object?> responseMetadata,
+        OpenAIErrorInfo? error,
+        CancellationToken cancellationToken)
+    {
+        var finishedAt = DateTimeOffset.UtcNow;
+        var latency = finishedAt - startedAt;
+
+        // Extract usage metrics
+        UsageMetrics? usage = null;
+        if (response?.Value?.Usage is not null)
+        {
+            var u = response.Value.Usage;
+            usage = new UsageMetrics(
+                PromptTokens: u.InputTokenCount,
+                CompletionTokens: u.OutputTokenCount,
+                TotalTokens: u.TotalTokenCount
+            );
+        }
+
+        // Extract logprobs if available
+        LogProbsBundle? logProbs = null;
+        if (response?.Value?.ContentTokenLogProbabilities?.Count > 0)
+        {
+            var tokens = new List<TokenLogProb>();
+
+            foreach (var contentLogProb in response.Value.ContentTokenLogProbabilities)
+            {
+                if (contentLogProb?.TopLogProbabilities is null) continue;
+
+                foreach (var tokenLogProb in contentLogProb.TopLogProbabilities)
+                {
+                    var topLogProbs = contentLogProb.TopLogProbabilities
+                        .Select(tlp => new TopLogProb(tlp.Token, tlp.LogProbability))
+                        .ToList();
+
+                    tokens.Add(new TokenLogProb(
+                        tokenLogProb.Token,
+                        tokenLogProb.LogProbability,
+                        topLogProbs
+                    ));
+
+                    break; // Only take the first token from this content item
+                }
+            }
+
+            if (tokens.Count > 0)
+            {
+                logProbs = new LogProbsBundle(tokens);
+            }
+        }
+
+        // For o-series models, we would extract reasoning items here
+        // The current OpenAI SDK 2.5.0 doesn't expose Responses API yet,
+        // but we prepare the structure for when it's available
+        var reasoningItems = new List<string>();
+        string? reasoningSummary = null;
+
+        // Note: When SDK supports Responses API, we'll extract:
+        // - reasoning summary from response metadata
+        // - reasoning/status items from streaming chunks
+        // For now, we check if it's an o-series model and log that info
+        if (IsOSeriesModel(model) && response is not null)
+        {
+            // Future: Extract reasoning data when SDK supports it
+            // For now, just note that this was an o-series model
+            responseMetadata["modelSeries"] = "o-series";
+        }
+
+        var diagnostics = new AiDiagnostics(
+            ReasoningSummary: reasoningSummary,
+            ReasoningItems: reasoningItems,
+            Usage: usage,
+            Model: model,
+            Temperature: temperature,
+            Seed: null, // SDK doesn't expose seed in responses yet
+            LogProbs: logProbs,
+            ToolTrace: Array.Empty<ToolCallTrace>(), // No tool use in current implementation
+            StartedAt: startedAt,
+            FinishedAt: finishedAt,
+            Latency: latency
+        );
+
+        await _diagnosticsLogger.WriteAsync(
+            diagnostics,
+            requestMetadata,
+            responseMetadata,
+            error,
+            cancellationToken);
     }
 
     private PoseRig ParsePoseRig(string content)
