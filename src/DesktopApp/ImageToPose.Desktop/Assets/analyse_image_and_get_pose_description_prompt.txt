@@ -28,7 +28,7 @@ LATERALITY LOCK (MANDATORY)
 3) If [USER_ANCHORS] is present and seems to conflict with the image, write Check=FLAG and still use USER_ANCHORS, adding a one-clause note of the conflict.
 
 OUTPUT (exactly two blocks)
-[ANCHORS] Left hand=?, Right hand=?, Facing=?, Check=PASS|FLAG
+[ANCHORS] Left hand=?, Right hand=?, Left foot=?, Right foot?, Facing=?, Check=PASS|FLAG
 [POSE] One paragraph (4–6 sentences, ≤140 words) covering: camera/view; global stance & lean; head/neck (yaw/pitch/tilt); torso orientation/lean/side-bend; each shoulder/arm (flexion/abduction/protraction), elbow bend, forearm rotation; hands (gesture + palm orientation); hips/legs/knees/feet/ankles; brief occlusions/uncertainties.
 
 RULES
