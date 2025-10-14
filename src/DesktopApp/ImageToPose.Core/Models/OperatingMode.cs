@@ -51,12 +51,12 @@ public static class OpenAIModelExtensions
         // Conservative defaults: many o-series and 4.1-family models do not allow token logprobs.
         var caps = new Dictionary<OpenAIModel, ModelCapability>
         {
-            [OpenAIModel.Gpt41Nano] = new ModelCapability(SupportsLogProbs: true),
-            [OpenAIModel.Gpt41Mini] = new ModelCapability(SupportsLogProbs: true),
-            [OpenAIModel.Gpt41] = new ModelCapability(SupportsLogProbs: true),
-            [OpenAIModel.O4Mini] = new ModelCapability(SupportsLogProbs: false),
-            [OpenAIModel.Gpt5] = new ModelCapability(SupportsLogProbs: false),
-            [OpenAIModel.O3] = new ModelCapability(SupportsLogProbs: false)
+            [OpenAIModel.Gpt41Nano] = new ModelCapability(SupportsLogProbs: true, SupportsTemperature: true),
+            [OpenAIModel.Gpt41Mini] = new ModelCapability(SupportsLogProbs: true, SupportsTemperature: true),
+            [OpenAIModel.Gpt41] = new ModelCapability(SupportsLogProbs: true, SupportsTemperature: true),
+            [OpenAIModel.O4Mini] = new ModelCapability(SupportsLogProbs: false, SupportsTemperature: false),
+            [OpenAIModel.Gpt5] = new ModelCapability(SupportsLogProbs: false, SupportsTemperature: true),
+            [OpenAIModel.O3] = new ModelCapability(SupportsLogProbs: false, SupportsTemperature: false)
         };
         _capabilities = new ReadOnlyDictionary<OpenAIModel, ModelCapability>(caps);
         All = Array.AsReadOnly(allValues);
@@ -88,9 +88,15 @@ public static class OpenAIModelExtensions
 
     public static bool SupportsLogProbs(string modelId)
         => TryParse(modelId, out var m) && m.SupportsLogProbs();
+
+    public static bool SupportsTemperature(this OpenAIModel model)
+        => _capabilities.TryGetValue(model, out var cap) && cap.SupportsTemperature;
+
+    public static bool SupportsTemperature(string modelId)
+        => TryParse(modelId, out var m) && m.SupportsTemperature();
 }
 
-public readonly record struct ModelCapability(bool SupportsLogProbs);
+public readonly record struct ModelCapability(bool SupportsLogProbs, bool SupportsTemperature);
 
 public static class ModeModelMap
 {

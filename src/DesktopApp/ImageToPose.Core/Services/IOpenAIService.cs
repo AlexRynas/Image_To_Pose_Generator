@@ -220,14 +220,14 @@ public class OpenAIService : IOpenAIService
             MaxOutputTokenCount = 1000
         };
 
-        // O-series models only support default temperature (1)
-        if (!IsOSeriesModel(model))
+        // Set temperature only if the resolved model supports it
+        if (OpenAIModelExtensions.SupportsTemperature(model))
         {
             chatOptions.Temperature = temperature;
         }
         else
         {
-            temperature = 1.0f; // Use default for O-series models
+            temperature = 1.0f; // Use default for models that do not support temperature control
         }
 
         // Enable logprobs only when explicitly supported by our capability map
@@ -347,14 +347,14 @@ public class OpenAIService : IOpenAIService
             MaxOutputTokenCount = 2000
         };
 
-        // O-series models only support default temperature (1)
-        if (!IsOSeriesModel(model))
+        // Set temperature only if the resolved model supports it
+        if (OpenAIModelExtensions.SupportsTemperature(model))
         {
             chatOptions.Temperature = temperature;
         }
         else
         {
-            temperature = 1.0f; // Use default for O-series models
+            temperature = 1.0f; // Use default for models that do not support temperature control
         }
 
         // Enable logprobs only when explicitly supported by our capability map
