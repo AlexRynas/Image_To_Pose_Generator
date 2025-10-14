@@ -217,9 +217,18 @@ public class OpenAIService : IOpenAIService
         var temperature = 0.3f;
         var chatOptions = new ChatCompletionOptions
         {
-            Temperature = temperature,
             MaxOutputTokenCount = 1000
         };
+
+        // O-series models only support default temperature (1)
+        if (!IsOSeriesModel(model))
+        {
+            chatOptions.Temperature = temperature;
+        }
+        else
+        {
+            temperature = 1.0f; // Use default for O-series models
+        }
 
         // Check if model supports logprobs
         if (IsGptModel(model))
@@ -331,9 +340,18 @@ public class OpenAIService : IOpenAIService
         var temperature = 0.2f;
         var chatOptions = new ChatCompletionOptions
         {
-            Temperature = temperature,
             MaxOutputTokenCount = 2000
         };
+
+        // O-series models only support default temperature (1)
+        if (!IsOSeriesModel(model))
+        {
+            chatOptions.Temperature = temperature;
+        }
+        else
+        {
+            temperature = 1.0f; // Use default for O-series models
+        }
 
         // Check if model supports logprobs
         if (IsGptModel(model))
