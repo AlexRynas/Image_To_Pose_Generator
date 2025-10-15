@@ -353,7 +353,7 @@ public class OpenAIService : IOpenAIService
         var temperature = 0.2f;
         var chatOptions = new ChatCompletionOptions
         {
-            MaxOutputTokenCount = 2000
+            MaxOutputTokenCount = 1000
         };
 
         // Set temperature only if the resolved model supports it
