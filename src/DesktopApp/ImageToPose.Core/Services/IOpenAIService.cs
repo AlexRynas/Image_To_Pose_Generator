@@ -335,10 +335,13 @@ public class OpenAIService : IOpenAIService
         var replacement = $"POSE_TEXT_START{Environment.NewLine}{extendedPoseText}{Environment.NewLine}POSE_TEXT_END";
         var prompt = Regex.Replace(promptTemplate, pattern, replacement, RegexOptions.IgnoreCase);
 
+        // O-series and other models all support system + user message pattern
+        // System message contains the instructions, user message triggers generation
         var messages = new List<ChatMessage>
-            {
-                new SystemChatMessage(prompt)
-            };
+        {
+            new SystemChatMessage(prompt),
+            new UserChatMessage("Generate the rig following the instructions above.")
+        };
 
         var chat = client.GetChatClient(model);
         var temperature = 0.2f;
@@ -461,6 +464,8 @@ public class OpenAIService : IOpenAIService
     {
         // small backoff loop around a one-token-ish probe
         var chat = root.GetChatClient(model);
+        
+        // O-series models require a user message (not just system)
         var msgs = new[] { new UserChatMessage("ping") };
         var delays = new[] { 250, 500, 1000 }; // ms
 
