@@ -196,22 +196,24 @@ public class OpenAIService : IOpenAIService
 
         // Build the user message (text + image) using USER-SET ANCHORS format
         var anchorsBlock = input.ToUserAnchorsBlock();
-        var userMessageText =
-            $"USER-SET ANCHORS\n{anchorsBlock}\n\n" +
-            "Analyze the attached image and produce the extended pose description.";
+        
+        // Replace the section from [USER_ANCHORS] to TASK with our actual anchors
+        var pattern = @"\[USER_ANCHORS\][\s\S]*?TASK";
+        var replacement = $"{anchorsBlock}{Environment.NewLine}{Environment.NewLine}TASK";
+        var populatedPrompt = Regex.Replace(promptTemplate, pattern, replacement, RegexOptions.IgnoreCase);
 
         // Read the image and attach as an image content part (binary)
         byte[] bytes = await File.ReadAllBytesAsync(input.ImagePath, cancellationToken);
         var imagePart = ChatMessageContentPart.CreateImagePart(BinaryData.FromBytes(bytes), DetectImageMime(input.ImagePath));
 
+        // Use UserChatMessage for all models (o-series don't support system messages)
         var messages = new List<ChatMessage>
-            {
-                new SystemChatMessage(promptTemplate),
-                new UserChatMessage(
-                    ChatMessageContentPart.CreateTextPart(userMessageText),
-                    imagePart
-                )
-            };
+        {
+            new UserChatMessage(
+                ChatMessageContentPart.CreateTextPart(populatedPrompt),
+                imagePart
+            )
+        };
 
         var chat = client.GetChatClient(model);
         var temperature = 0.3f;
@@ -335,13 +337,17 @@ public class OpenAIService : IOpenAIService
         var replacement = $"POSE_TEXT_START{Environment.NewLine}{extendedPoseText}{Environment.NewLine}POSE_TEXT_END";
         var prompt = Regex.Replace(promptTemplate, pattern, replacement, RegexOptions.IgnoreCase);
 
-        // O-series and other models all support system + user message pattern
-        // System message contains the instructions, user message triggers generation
-        var messages = new List<ChatMessage>
+        // O-series models don't support system messages, so we combine everything into the user message
+        var messages = new List<ChatMessage>();
+        if (IsOSeriesModel(model))
         {
-            new SystemChatMessage(prompt),
-            new UserChatMessage("Generate the rig following the instructions above.")
-        };
+            messages.Add(new UserChatMessage($"{prompt}\n\nGenerate the rig following the instructions above."));
+        }
+        else
+        {
+            messages.Add(new SystemChatMessage(prompt));
+            messages.Add(new UserChatMessage("Generate the rig following the instructions above."));
+        }
 
         var chat = client.GetChatClient(model);
         var temperature = 0.2f;
