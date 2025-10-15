@@ -1,5 +1,6 @@
 using System.Net;
 using Microsoft.Extensions.Logging;
+using OpenAI.Chat;
 
 namespace ImageToPose.Core.Services;
 
@@ -8,6 +9,7 @@ public record OpenAIErrorInfo(string Code, string Message);
 public interface IOpenAIErrorHandler
 {
     OpenAIErrorInfo Translate(Exception ex);
+    OpenAIErrorInfo? ValidateFinishReason(ChatFinishReason finishReason, int maxTokens);
 }
 
 public class OpenAIErrorHandler : IOpenAIErrorHandler
@@ -114,6 +116,40 @@ public class OpenAIErrorHandler : IOpenAIErrorHandler
 
     private static string Trim(string? s)
         => string.IsNullOrWhiteSpace(s) ? string.Empty : s.Trim();
+
+    public OpenAIErrorInfo? ValidateFinishReason(ChatFinishReason finishReason, int maxTokens)
+    {
+        // Check for problematic finish reasons
+        if (finishReason == ChatFinishReason.Length)
+        {
+            OpenAIErrorHandlerLogs.TokenLimitReached(_logger, maxTokens);
+            return new OpenAIErrorInfo(
+                "token_limit_reached",
+                $"Response was truncated because it exceeded the maximum token limit of {maxTokens}. " +
+                "The response may be incomplete. Try using a higher quality mode or simplifying your request.");
+        }
+
+        if (finishReason == ChatFinishReason.ContentFilter)
+        {
+            OpenAIErrorHandlerLogs.ContentFiltered(_logger);
+            return new OpenAIErrorInfo(
+                "content_filter",
+                "Response was blocked by content filtering. The image or request may contain content that violates OpenAI's usage policies. " +
+                "Please try a different image or adjust your input.");
+        }
+
+        // Stop and ToolCalls are normal completion reasons, no error
+        if (finishReason == ChatFinishReason.Stop || finishReason == ChatFinishReason.ToolCalls)
+        {
+            return null;
+        }
+
+        // Any other unexpected finish reason
+        OpenAIErrorHandlerLogs.UnexpectedFinishReason(_logger, finishReason.ToString());
+        return new OpenAIErrorInfo(
+            "unexpected_finish_reason",
+            $"Request completed with unexpected finish reason: {finishReason}. The response may be incomplete or invalid.");
+    }
 }
 
 internal static partial class OpenAIErrorHandlerLogs
@@ -153,4 +189,13 @@ internal static partial class OpenAIErrorHandlerLogs
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Error translating OpenAI exception")]
     public static partial void TranslationFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Response truncated: token limit of {MaxTokens} reached")]
+    public static partial void TokenLimitReached(ILogger logger, int maxTokens);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Response blocked by content filter")]
+    public static partial void ContentFiltered(ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Unexpected finish reason: {FinishReason}")]
+    public static partial void UnexpectedFinishReason(ILogger logger, string finishReason);
 }

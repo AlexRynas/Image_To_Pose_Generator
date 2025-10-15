@@ -133,4 +133,12 @@ public static class ModeModelMap
         OperatingMode.Quality => "Best quality at a sensible price.",
         _ => string.Empty
     };
+
+    public static int GetMaxOutputTokenCount(OperatingMode mode) => mode switch
+    {
+        OperatingMode.Budget => 3000,
+        OperatingMode.Balanced => 5000,
+        OperatingMode.Quality => 30000,
+        _ => 5000, // Default to Balanced
+    };
 }

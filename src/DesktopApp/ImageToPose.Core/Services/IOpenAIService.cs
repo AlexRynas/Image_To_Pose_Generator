@@ -209,7 +209,7 @@ public class OpenAIService : IOpenAIService
 
         // Build the user message (text + image) using USER-SET ANCHORS format
         var anchorsBlock = input.ToUserAnchorsBlock();
-        
+
         // Replace the section from [USER_ANCHORS] to TASK with our actual anchors
         var pattern = @"\[USER_ANCHORS\][\s\S]*?TASK";
         var replacement = $"{anchorsBlock}{Environment.NewLine}{Environment.NewLine}TASK";
@@ -232,7 +232,7 @@ public class OpenAIService : IOpenAIService
         var temperature = 0.3f;
         var chatOptions = new ChatCompletionOptions
         {
-            MaxOutputTokenCount = 10000
+            MaxOutputTokenCount = ModeModelMap.GetMaxOutputTokenCount(SelectedMode)
         };
 
         // Set temperature only if the resolved model supports it
@@ -266,10 +266,27 @@ public class OpenAIService : IOpenAIService
             response = await chat.CompleteChatAsync(messages, chatOptions, cancellationToken);
             content = response?.Value?.Content?.FirstOrDefault()?.Text ?? string.Empty;
 
+            if (response?.Value is null)
+            {
+                OpenAIServiceLogs.EmptyResponse(_logger);
+                throw new InvalidOperationException("OpenAI returned a null response");
+            }
+
             if (string.IsNullOrWhiteSpace(content))
             {
                 OpenAIServiceLogs.EmptyResponse(_logger);
                 throw new InvalidOperationException("OpenAI returned an empty response");
+            }
+
+            // Validate the finish reason to catch token limit or content filter issues
+            var finishReasonError = _errorHandler.ValidateFinishReason(
+                response.Value.FinishReason,
+                chatOptions.MaxOutputTokenCount ?? 0);
+
+            if (finishReasonError is not null)
+            {
+                OpenAIServiceLogs.ProblematicFinishReason(_logger, response.Value.FinishReason.ToString());
+                throw new InvalidOperationException($"{finishReasonError.Code}: {finishReasonError.Message}");
             }
 
             OpenAIServiceLogs.PoseAnalysisComplete(_logger, content.Length);
@@ -366,7 +383,7 @@ public class OpenAIService : IOpenAIService
         var temperature = 0.2f;
         var chatOptions = new ChatCompletionOptions
         {
-            MaxOutputTokenCount = 10000
+            MaxOutputTokenCount = ModeModelMap.GetMaxOutputTokenCount(SelectedMode)
         };
 
         // Set temperature only if the resolved model supports it
@@ -401,10 +418,27 @@ public class OpenAIService : IOpenAIService
             response = await chat.CompleteChatAsync(messages, chatOptions, cancellationToken);
             content = response?.Value?.Content?.FirstOrDefault()?.Text ?? string.Empty;
 
+            if (response?.Value is null)
+            {
+                OpenAIServiceLogs.EmptyResponse(_logger);
+                throw new InvalidOperationException("OpenAI returned a null response");
+            }
+
             if (string.IsNullOrWhiteSpace(content))
             {
                 OpenAIServiceLogs.EmptyResponse(_logger);
                 throw new InvalidOperationException("OpenAI returned an empty response");
+            }
+
+            // Validate the finish reason to catch token limit or content filter issues
+            var finishReasonError = _errorHandler.ValidateFinishReason(
+                response.Value.FinishReason,
+                chatOptions.MaxOutputTokenCount ?? 0);
+
+            if (finishReasonError is not null)
+            {
+                OpenAIServiceLogs.ProblematicFinishReason(_logger, response.Value.FinishReason.ToString());
+                throw new InvalidOperationException($"{finishReasonError.Code}: {finishReasonError.Message}");
             }
 
             OpenAIServiceLogs.ParsingPoseRig(_logger);
@@ -483,7 +517,7 @@ public class OpenAIService : IOpenAIService
     {
         // small backoff loop around a one-token-ish probe
         var chat = root.GetChatClient(model);
-        
+
         // O-series models require a user message (not just system)
         var msgs = new[] { new UserChatMessage("ping") };
         var delays = new[] { 250, 500, 1000 }; // ms
@@ -797,4 +831,7 @@ internal static partial class OpenAIServiceLogs
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Rig generated successfully with {BoneCount} bones")]
     public static partial void RigGenerated(ILogger logger, int boneCount);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Problematic finish reason detected: {FinishReason}")]
+    public static partial void ProblematicFinishReason(ILogger logger, string finishReason);
 }
