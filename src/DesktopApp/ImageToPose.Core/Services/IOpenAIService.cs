@@ -4,6 +4,7 @@ using OpenAI;
 using OpenAI.Chat;
 using Microsoft.Extensions.Logging;
 using System.ClientModel;
+using System.ClientModel.Primitives;
 
 namespace ImageToPose.Core.Services;
 
@@ -55,6 +56,18 @@ public class OpenAIService : IOpenAIService
         OpenAIServiceLogs.ServiceInitialized(_logger);
     }
 
+    /// <summary>
+    /// Creates an OpenAI client with extended timeout configuration to handle long-running operations
+    /// </summary>
+    private static OpenAIClient CreateOpenAIClient(string apiKey)
+    {
+        var options = new OpenAIClientOptions
+        {
+            NetworkTimeout = TimeSpan.FromMinutes(10) // 10 minutes timeout for complex operations
+        };
+        return new OpenAIClient(new ApiKeyCredential(apiKey), options);
+    }
+
     public async Task<bool> ValidateApiKeyAsync(string apiKey, CancellationToken cancellationToken = default)
     {
         using var _ = _logger.BeginScope(new Dictionary<string, object> { ["Operation"] = "ValidateApiKey" });
@@ -68,7 +81,7 @@ public class OpenAIService : IOpenAIService
 
         try
         {
-            var root = new OpenAIClient(apiKey);
+            var root = CreateOpenAIClient(apiKey);
             var modelClient = root.GetOpenAIModelClient();
             var modelsPage = await modelClient.GetModelsAsync(cancellationToken);
             var available = modelsPage.Value.Select(m => m.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -133,7 +146,7 @@ public class OpenAIService : IOpenAIService
             _chosenModel = null;
         }
 
-        var root = new OpenAIClient(options.ApiKey);
+        var root = CreateOpenAIClient(options.ApiKey);
         var modelClient = root.GetOpenAIModelClient();
         var modelsPage = await modelClient.GetModelsAsync(cancellationToken);
         var available = modelsPage.Value.Select(m => m.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -185,7 +198,7 @@ public class OpenAIService : IOpenAIService
             throw new InvalidOperationException("OpenAI API key is not set");
         }
 
-        var client = new OpenAIClient(options.ApiKey);
+        var client = CreateOpenAIClient(options.ApiKey);
 
         // Resolve a model that actually works for this key (vision required)
         var model = await EnsureModelAsync(client, cancellationToken);
@@ -219,7 +232,7 @@ public class OpenAIService : IOpenAIService
         var temperature = 0.3f;
         var chatOptions = new ChatCompletionOptions
         {
-            MaxOutputTokenCount = 1000
+            MaxOutputTokenCount = 10000
         };
 
         // Set temperature only if the resolved model supports it
@@ -325,7 +338,7 @@ public class OpenAIService : IOpenAIService
             throw new InvalidOperationException("OpenAI API key is not set");
         }
 
-        var client = new OpenAIClient(options.ApiKey);
+        var client = CreateOpenAIClient(options.ApiKey);
         var model = await EnsureModelAsync(client, cancellationToken);
         OpenAIServiceLogs.UsingModel(_logger, model);
 
@@ -353,7 +366,7 @@ public class OpenAIService : IOpenAIService
         var temperature = 0.2f;
         var chatOptions = new ChatCompletionOptions
         {
-            MaxOutputTokenCount = 1000
+            MaxOutputTokenCount = 10000
         };
 
         // Set temperature only if the resolved model supports it
