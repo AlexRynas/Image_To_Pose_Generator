@@ -55,7 +55,7 @@ public static class OpenAIModelExtensions
             [OpenAIModel.Gpt41Mini] = new ModelCapability(SupportsLogProbs: true, SupportsTemperature: true),
             [OpenAIModel.Gpt41] = new ModelCapability(SupportsLogProbs: true, SupportsTemperature: true),
             [OpenAIModel.O4Mini] = new ModelCapability(SupportsLogProbs: false, SupportsTemperature: false),
-            [OpenAIModel.Gpt5] = new ModelCapability(SupportsLogProbs: false, SupportsTemperature: true),
+            [OpenAIModel.Gpt5] = new ModelCapability(SupportsLogProbs: false, SupportsTemperature: false),
             [OpenAIModel.O3] = new ModelCapability(SupportsLogProbs: false, SupportsTemperature: false)
         };
         _capabilities = new ReadOnlyDictionary<OpenAIModel, ModelCapability>(caps);
