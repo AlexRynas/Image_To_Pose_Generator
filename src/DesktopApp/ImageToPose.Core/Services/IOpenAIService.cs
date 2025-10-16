@@ -463,24 +463,34 @@ public class OpenAIService : IOpenAIService
     {
         if (response?.Value is null)
         {
-            OpenAIServiceLogs.EmptyResponse(_logger);
+            OpenAIServiceLogs.EmptyResponse(_logger, "Response payload was null.");
             throw new InvalidOperationException("OpenAI returned a null response");
         }
 
-        if (string.IsNullOrWhiteSpace(content))
-        {
-            OpenAIServiceLogs.EmptyResponse(_logger);
-            throw new InvalidOperationException("OpenAI returned an empty response");
-        }
+        var finishReason = response.Value.FinishReason;
+        var finishReasonError = _errorHandler.ValidateFinishReason(finishReason, maxOutputTokens);
+        var hasContent = !string.IsNullOrWhiteSpace(content);
 
-        // Validate the finish reason to catch token limit or content filter issues
-        var finishReasonError = _errorHandler.ValidateFinishReason(
-            response.Value.FinishReason,
-            maxOutputTokens);
+        if (!hasContent)
+        {
+            var emptyDetails = finishReasonError is not null
+                ? $"{finishReasonError.Code}: {finishReasonError.Message}"
+                : $"Finish reason: {finishReason}";
+
+            OpenAIServiceLogs.EmptyResponse(_logger, emptyDetails);
+
+            if (finishReasonError is not null)
+            {
+                OpenAIServiceLogs.ProblematicFinishReason(_logger, finishReason.ToString());
+                throw new InvalidOperationException($"{finishReasonError.Code}: {finishReasonError.Message} The model returned no content.");
+            }
+
+            throw new InvalidOperationException($"empty_response: OpenAI returned no content. Finish reason: {finishReason}.");
+        }
 
         if (finishReasonError is not null)
         {
-            OpenAIServiceLogs.ProblematicFinishReason(_logger, response.Value.FinishReason.ToString());
+            OpenAIServiceLogs.ProblematicFinishReason(_logger, finishReason.ToString());
             throw new InvalidOperationException($"{finishReasonError.Code}: {finishReasonError.Message}");
         }
     }
@@ -798,8 +808,8 @@ internal static partial class OpenAIServiceLogs
     [LoggerMessage(Level = LogLevel.Information, Message = "Sending vision request to OpenAI model: {Model}")]
     public static partial void SendingVisionRequest(ILogger logger, string model);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "OpenAI returned empty response")]
-    public static partial void EmptyResponse(ILogger logger);
+    [LoggerMessage(Level = LogLevel.Error, Message = "OpenAI returned empty response. Details: {Details}")]
+    public static partial void EmptyResponse(ILogger logger, string details);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Pose analysis complete, response length: {Length}")]
     public static partial void PoseAnalysisComplete(ILogger logger, int length);
