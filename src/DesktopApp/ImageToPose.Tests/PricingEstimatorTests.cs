@@ -16,11 +16,11 @@ public class PricingEstimatorTests
         var estimator = new PriceEstimator(NullLogger<PriceEstimator>.Instance);
 
         // Act
-    var rates = await estimator.GetRatesAsync(OpenAIModel.Gpt41Mini.GetModelId());
+        var rates = await estimator.GetRatesAsync(OpenAIModel.Gpt41Mini.GetModelId());
 
         // Assert
         rates.Should().NotBeNull();
-    rates!.ModelId.Should().Be(OpenAIModel.Gpt41Mini.GetModelId());
+        rates!.ModelId.Should().Be(OpenAIModel.Gpt41Mini.GetModelId());
         rates.InputPerMillion.Should().BeGreaterThan(0);
         rates.OutputPerMillion.Should().BeGreaterThan(0);
     }
@@ -81,7 +81,7 @@ public class PricingEstimatorTests
     {
         // Arrange
         int tokens = 1000;
-    decimal perMillion = 0.40m;
+        decimal perMillion = 0.40m;
 
         // Act
         decimal cost = Math.Round(tokens / 1_000_000m * perMillion, 6, MidpointRounding.AwayFromZero);
@@ -134,12 +134,12 @@ public class PricingEstimatorTests
     public void ModeModelMap_Budget_ShouldHaveCorrectPriority()
     {
         // Act
-    var priorities = ModeModelMap.GetPriorityList(OperatingMode.Budget);
+        var priorities = ModeModelMap.GetPriorityList(OperatingMode.Budget);
 
         // Assert
         priorities.Should().NotBeEmpty();
-    priorities.First().Should().Be(OpenAIModel.Gpt41Nano);
-    priorities.Should().Contain(OpenAIModel.Gpt41Mini);
+        priorities.First().Should().Be(OpenAIModel.Gpt41Nano);
+        priorities.Should().Contain(OpenAIModel.Gpt41Mini);
     }
 
     [Fact]
@@ -149,10 +149,10 @@ public class PricingEstimatorTests
         var priorities = ModeModelMap.GetPriorityList(OperatingMode.Balanced);
 
         // Assert
-    priorities.Should().NotBeEmpty();
-    //priorities.First().Should().Be(OpenAIModel.O4Mini);
-    //priorities.Should().Contain(OpenAIModel.O4Mini);
-    priorities.Should().Contain(OpenAIModel.Gpt41);
+        priorities.Should().NotBeEmpty();
+        priorities.First().Should().Be(OpenAIModel.O4Mini);
+        priorities.Should().Contain(OpenAIModel.O4Mini);
+        priorities.Should().Contain(OpenAIModel.Gpt41);
     }
 
     [Fact]
@@ -162,9 +162,9 @@ public class PricingEstimatorTests
         var priorities = ModeModelMap.GetPriorityList(OperatingMode.Quality);
 
         // Assert
-    priorities.Should().NotBeEmpty();
-    priorities.First().Should().Be(OpenAIModel.Gpt5);
-    //priorities.Should().Contain(OpenAIModel.O3);
+        priorities.Should().NotBeEmpty();
+        priorities.First().Should().Be(OpenAIModel.Gpt5);
+        priorities.Should().Contain(OpenAIModel.O3);
     }
 
     [Theory]

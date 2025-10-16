@@ -18,11 +18,11 @@ public class ModeSelectionIntegrationTests
         var assumedOutputTokens = 600; // Balanced mode
 
         // Act - Get rates
-    var rates = await estimator.GetRatesAsync(OpenAIModel.Gpt41Mini.GetModelId());
+        var rates = await estimator.GetRatesAsync(OpenAIModel.Gpt41Mini.GetModelId());
 
         // Assert - Rates loaded
         rates.Should().NotBeNull();
-    rates!.ModelId.Should().Be(OpenAIModel.Gpt41Mini.GetModelId());
+        rates!.ModelId.Should().Be(OpenAIModel.Gpt41Mini.GetModelId());
 
         // Act - Estimate text (simulating rough pose input)
         var roughText = "Character standing with left arm raised, right arm at side, head turned left.";
@@ -108,7 +108,7 @@ public class ModeSelectionIntegrationTests
     {
         // Arrange
         var estimator = new PriceEstimator(NullLogger<PriceEstimator>.Instance);
-    var rates = await estimator.GetRatesAsync(OpenAIModel.Gpt41Mini.GetModelId());
+        var rates = await estimator.GetRatesAsync(OpenAIModel.Gpt41Mini.GetModelId());
         rates.Should().NotBeNull();
 
         // Act
@@ -179,10 +179,10 @@ public class ModeSelectionIntegrationTests
         // Assert - Verify exact descriptions match the spec
         ModeModelMap.GetModeDescription(OperatingMode.Budget)
             .Should().Be("Fast & cheapest; ok for simple photos.");
-        
+
         ModeModelMap.GetModeDescription(OperatingMode.Balanced)
             .Should().Be("Good quality for most cases.");
-        
+
         ModeModelMap.GetModeDescription(OperatingMode.Quality)
             .Should().Be("Best quality at a sensible price.");
     }
@@ -197,13 +197,13 @@ public class ModeSelectionIntegrationTests
 
         // Balanced
         var balancedPriorities = ModeModelMap.GetPriorityList(OperatingMode.Balanced);
-        balancedPriorities.Should().StartWith(OpenAIModel.Gpt41);
-        //balancedPriorities.Should().StartWith(OpenAIModel.O4Mini);
-        //balancedPriorities.Should().ContainInOrder(OpenAIModel.O4Mini, OpenAIModel.Gpt41);
+        balancedPriorities.Should().StartWith(OpenAIModel.O4Mini);
+        balancedPriorities.Should().StartWith(OpenAIModel.O4Mini);
+        balancedPriorities.Should().ContainInOrder(OpenAIModel.O4Mini, OpenAIModel.Gpt41);
 
         // Quality
         var qualityPriorities = ModeModelMap.GetPriorityList(OperatingMode.Quality);
         qualityPriorities.Should().StartWith(OpenAIModel.Gpt5);
-        //qualityPriorities.Should().Contain(OpenAIModel.O3);
+        qualityPriorities.Should().Contain(OpenAIModel.O3);
     }
 }

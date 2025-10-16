@@ -108,14 +108,14 @@ public static class ModeModelMap
     // For now I have disabled the o-series models because they do not work and I do not yet know how to fix this.
     public static readonly IReadOnlyList<OpenAIModel> BalancedPreferred = new[]
     {
-        //OpenAIModel.O4Mini,
+        OpenAIModel.O4Mini,
         OpenAIModel.Gpt41,
     };
 
     public static readonly IReadOnlyList<OpenAIModel> QualityPreferred = new[]
     {
         OpenAIModel.Gpt5,
-        //OpenAIModel.O3,
+        OpenAIModel.O3,
     };
 
     public static IReadOnlyList<OpenAIModel> GetPriorityList(OperatingMode mode) => mode switch

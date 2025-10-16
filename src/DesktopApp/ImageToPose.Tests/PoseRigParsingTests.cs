@@ -16,7 +16,7 @@ public class PoseRigParsingTests
         var priceEstimator = new PriceEstimator(NullLogger<PriceEstimator>.Instance);
         var errorHandler = new OpenAIErrorHandler(NullLogger<OpenAIErrorHandler>.Instance);
         var openAIService = new OpenAIService(NullLogger<OpenAIService>.Instance, settingsService, promptLoader, priceEstimator, errorHandler);
-        
+
         var llmResponse = @"```python
 POSE_DEGREES = {
     ""pelvis"": [0.0, 0.0, 5.0],
@@ -48,7 +48,7 @@ POSE_DEGREES = {
         var priceEstimator = new PriceEstimator(NullLogger<PriceEstimator>.Instance);
         var errorHandler = new OpenAIErrorHandler(NullLogger<OpenAIErrorHandler>.Instance);
         var openAIService = new OpenAIService(NullLogger<OpenAIService>.Instance, settingsService, promptLoader, priceEstimator, errorHandler);
-        
+
         var llmResponse = @"POSE_DEGREES = {
     ""upperarm_l"": [45.0, -30.0, 20.0],
     ""lowerarm_l"": [-45.0, 0.0, 0.0]
