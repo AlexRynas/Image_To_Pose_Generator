@@ -266,28 +266,7 @@ public class OpenAIService : IOpenAIService
             response = await chat.CompleteChatAsync(messages, chatOptions, cancellationToken);
             content = response?.Value?.Content?.FirstOrDefault()?.Text ?? string.Empty;
 
-            if (response?.Value is null)
-            {
-                OpenAIServiceLogs.EmptyResponse(_logger);
-                throw new InvalidOperationException("OpenAI returned a null response");
-            }
-
-            if (string.IsNullOrWhiteSpace(content))
-            {
-                OpenAIServiceLogs.EmptyResponse(_logger);
-                throw new InvalidOperationException("OpenAI returned an empty response");
-            }
-
-            // Validate the finish reason to catch token limit or content filter issues
-            var finishReasonError = _errorHandler.ValidateFinishReason(
-                response.Value.FinishReason,
-                chatOptions.MaxOutputTokenCount ?? 0);
-
-            if (finishReasonError is not null)
-            {
-                OpenAIServiceLogs.ProblematicFinishReason(_logger, response.Value.FinishReason.ToString());
-                throw new InvalidOperationException($"{finishReasonError.Code}: {finishReasonError.Message}");
-            }
+            ValidateResponseAndFinishReason(response, content, chatOptions.MaxOutputTokenCount ?? 0);
 
             OpenAIServiceLogs.PoseAnalysisComplete(_logger, content.Length);
         }
@@ -418,28 +397,7 @@ public class OpenAIService : IOpenAIService
             response = await chat.CompleteChatAsync(messages, chatOptions, cancellationToken);
             content = response?.Value?.Content?.FirstOrDefault()?.Text ?? string.Empty;
 
-            if (response?.Value is null)
-            {
-                OpenAIServiceLogs.EmptyResponse(_logger);
-                throw new InvalidOperationException("OpenAI returned a null response");
-            }
-
-            if (string.IsNullOrWhiteSpace(content))
-            {
-                OpenAIServiceLogs.EmptyResponse(_logger);
-                throw new InvalidOperationException("OpenAI returned an empty response");
-            }
-
-            // Validate the finish reason to catch token limit or content filter issues
-            var finishReasonError = _errorHandler.ValidateFinishReason(
-                response.Value.FinishReason,
-                chatOptions.MaxOutputTokenCount ?? 0);
-
-            if (finishReasonError is not null)
-            {
-                OpenAIServiceLogs.ProblematicFinishReason(_logger, response.Value.FinishReason.ToString());
-                throw new InvalidOperationException($"{finishReasonError.Code}: {finishReasonError.Message}");
-            }
+            ValidateResponseAndFinishReason(response, content, chatOptions.MaxOutputTokenCount ?? 0);
 
             OpenAIServiceLogs.ParsingPoseRig(_logger);
             rig = ParsePoseRig(content);
@@ -500,6 +458,32 @@ public class OpenAIService : IOpenAIService
     }
 
     // -------- Helpers --------
+
+    private void ValidateResponseAndFinishReason(ClientResult<ChatCompletion>? response, string? content, int maxOutputTokens)
+    {
+        if (response?.Value is null)
+        {
+            OpenAIServiceLogs.EmptyResponse(_logger);
+            throw new InvalidOperationException("OpenAI returned a null response");
+        }
+
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            OpenAIServiceLogs.EmptyResponse(_logger);
+            throw new InvalidOperationException("OpenAI returned an empty response");
+        }
+
+        // Validate the finish reason to catch token limit or content filter issues
+        var finishReasonError = _errorHandler.ValidateFinishReason(
+            response.Value.FinishReason,
+            maxOutputTokens);
+
+        if (finishReasonError is not null)
+        {
+            OpenAIServiceLogs.ProblematicFinishReason(_logger, response.Value.FinishReason.ToString());
+            throw new InvalidOperationException($"{finishReasonError.Code}: {finishReasonError.Message}");
+        }
+    }
 
     private static string DetectImageMime(string path)
     {
