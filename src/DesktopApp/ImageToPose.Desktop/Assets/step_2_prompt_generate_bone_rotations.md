@@ -73,6 +73,33 @@ The MPFB rig's T-pose has inherent bends that must be compensated:
 - **TRIGGERS for applying compensation**: "straight arm", "extended arm", "nearly straight", "elbow locked", "arm trailing behind", "arm hanging down", "arm at rest"
 - These compensations are ONLY applied when the pose requires straight/extended arms
 
+# PELVIS ROTATION COMPENSATION (CRITICAL)
+**IMPORTANT**: The pelvis bone is the root of the entire skeleton. Any rotation applied to the pelvis affects the **entire body** (both upper and lower halves), not just the torso.
+
+To compensate for the effect of pelvis rotation on the legs, you **MUST** apply counter-rotations to `thigh_l` and `thigh_r`:
+
+- **For pelvis.X** (forward/back lean):
+  - If `pelvis.X = +15` (body leans forward) → **subtract 15** from `thigh_l.X` and `thigh_r.X`
+  - If `pelvis.X = -15` (body leans back) → **add 15** to `thigh_l.X` and `thigh_r.X`
+  - Formula: `thigh.X = desired_leg_angle - pelvis.X`
+
+- **For pelvis.Y** (body turns left/right):
+  - **DO NOT USE pelvis.Y** - this axis is extremely difficult to compensate correctly
+  - **Always set pelvis.Y = 0**
+  - Use spine_01/spine_02/spine_03 Y-rotations for torso turning instead
+
+- **For pelvis.Z** (body tilts left/right):
+  - If `pelvis.Z = +10` (body tilts right) → **subtract 10** from `thigh_l.Z` and `thigh_r.Z`
+  - If `pelvis.Z = -10` (body tilts left) → **add 10** to `thigh_l.Z` and `thigh_r.Z`
+  - Formula: `thigh.Z = desired_leg_position - pelvis.Z`
+
+**Example**: If the character leans forward 20° at the hips while keeping legs straight down:
+- Set `pelvis.X = 20`
+- Set `thigh_l.X = -20` and `thigh_r.X = -20` (to compensate)
+- Result: Upper body leans forward, legs remain vertical
+
+**Always apply this compensation** when setting non-zero pelvis.X or pelvis.Z rotations to maintain correct leg positioning relative to the ground or intended pose.
+
 # ANCHOR-DRIVEN ESTIMATION WORKFLOW (INTERNAL – do not output)
 
 ## PHASE 1: TORSO ORIENTATION (CRITICAL)
@@ -140,19 +167,28 @@ The MPFB rig's T-pose has inherent bends that must be compensated:
    - Negative X = leg forward
    - Typical range: -135° (high knee) to -10° (slight forward)
    - **Don't over-flex**: -90° is extreme, most poses use -30° to -60°
+   - **CRITICAL**: Apply pelvis compensation: `thigh.X = desired_leg_angle - pelvis.X`
+   - Example: If pelvis.X = 20 and you want legs vertical, set thigh.X = -20
 
 2. **Hip abduction** (leg sideways):
    - Positive Z = leg moves outward
    - Typical range: -10° to +30°
    - **Don't ignore this**: Seated poses often have 15-25° abduction
+   - **CRITICAL**: Apply pelvis compensation: `thigh.Z = desired_leg_position - pelvis.Z`
+   - Example: If pelvis.Z = 10 and you want neutral stance, set thigh.Z = -10
 
-3. **Knee bend**:
+3. **Hip rotation** (leg turning):
+   - Use thigh.Y for individual leg rotation (turning in/out)
+   - Typical range: -20° to +20°
+   - **NOTE**: pelvis.Y should ALWAYS be 0 (no compensation needed)
+
+4. **Knee bend**:
    - 0° = straight (locked knee)
    - Positive X = bent
    - Typical values: 5° (nearly straight), 30° (slight), 60° (moderate), 90-100° (sharp), 135° (full)
    - **Match thigh flexion**: If thigh=-80°, calf should be 70-100° to keep foot reasonable
 
-4. **Foot/ankle**:
+5. **Foot/ankle**:
    - Small adjustments for plantarflexion (X) and rotation (Y/Z)
    - Usually -10° to +15°
 
@@ -172,7 +208,9 @@ Run these checks on your estimated dictionary:
 7. **Leg Abduction**: If seated, straddling, or wide stance → thigh.Z should be non-zero
 8. **Magnitude Reality**: Values should vary (avoid all 0, 10, 20, 90 patterns)
 9. **Hinge Compliance**: lowerarm and calf have Y=0, Z=0 always
-10. **Range Validation**: Check values against limits below
+10. **Pelvis Y-Lock**: Verify pelvis.Y = 0 (never use this axis)
+11. **Pelvis Compensation**: If pelvis.X or pelvis.Z are non-zero, verify thighs have compensating counter-rotations applied
+12. **Range Validation**: Check values against limits below
 
 # JOINT RANGE CONSTRAINTS
 Respect these anatomical limits unless pose explicitly exceeds them:
@@ -198,6 +236,8 @@ Respect these anatomical limits unless pose explicitly exceeds them:
 8. ❌ Using negative lowerarm values for bent elbows
 9. ❌ Using only round numbers (0, 10, 20, 90)
 10. ❌ Forgetting clavicle rotations when shoulders are protracted/elevated
+11. ❌ Using pelvis.Y rotation (always set to 0; use spine rotations instead)
+12. ❌ Forgetting pelvis compensation on thighs when pelvis.X or pelvis.Z are non-zero
 
 # OUTPUT RULES (HARD)
 - Respond with **one** fenced code block only, language tag `python`.
