@@ -129,7 +129,7 @@ Copy this dictionary - you'll need it in Step 4.
 - **Legs:** Hip mechanics vary by side
 - **Joints:** Y=hinge rotation (elbows, knees)
 
-See [chatgpt_prompt.txt](./chatgpt_prompt.txt) for complete rotation conventions.
+See [step_2_prompt_generate_bone_rotations.md](./step_2_prompt_generate_bone_rotations.md) for complete rotation conventions.
 
 ### Script Configuration Options
 

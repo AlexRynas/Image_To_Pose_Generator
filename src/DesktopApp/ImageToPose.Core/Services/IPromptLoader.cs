@@ -18,8 +18,8 @@ public class PromptLoader : IPromptLoader
 {
     private readonly IResourceLoader _resourceLoader;
     private readonly ILogger<PromptLoader> _logger;
-    private const string AnalyzeImagePromptResourceName = "ImageToPose.Desktop.Assets.analyse_image_and_get_pose_description_prompt.txt";
-    private const string GenerateRigPromptResourceName = "ImageToPose.Desktop.Assets.chatgpt_prompt.txt";
+    private const string AnalyzeImagePromptResourceName = "ImageToPose.Desktop.Assets.step_1_prompt_analyse_image_and_get_pose_description.md";
+    private const string GenerateRigPromptResourceName = "ImageToPose.Desktop.Assets.step_2_prompt_generate_bone_rotations.md";
 
     public PromptLoader(IResourceLoader resourceLoader, ILogger<PromptLoader> logger)
     {
