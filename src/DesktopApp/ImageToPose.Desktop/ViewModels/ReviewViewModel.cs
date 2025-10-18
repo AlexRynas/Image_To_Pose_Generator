@@ -11,6 +11,9 @@ public partial class ReviewViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(CanContinue))]
     private string _extendedPoseText = string.Empty;
 
+    [ObservableProperty]
+    private string _imagePath = string.Empty;
+
     public ReviewViewModel(WizardViewModel wizard)
     {
         _wizard = wizard;
@@ -19,8 +22,9 @@ public partial class ReviewViewModel : ViewModelBase
     [RelayCommand]
     private void Continue()
     {
-        // Pass the edited text to the generate view model
+        // Pass the edited text and image path to the generate view model
         _wizard.GenerateViewModel.ExtendedPoseDescription = ExtendedPoseText;
+        _wizard.GenerateViewModel.ImagePath = ImagePath;
         
         // Navigate to generate step
         _wizard.NavigateToStep(WizardStep.Generate);

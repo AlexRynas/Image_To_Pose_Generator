@@ -64,15 +64,15 @@
 								<Run Text="≈ $"/>
 								<Run Text="{Binding ModeVM.VisionEstimate.TotalUsd, StringFormat={}{0:F6}}"/>
 							</TextBlock>
-						</StackPanel>
-						<Separator/>
-						<StackPanel Spacing="2">
-							<TextBlock Text="Step 2 (Text)" FontWeight="SemiBold"/>
-							<TextBlock FontSize="12">
-								<Run Text="Input: "/>
-								<Run Text="{Binding ModeVM.TextEstimate.InputTokens}"/>
-								<Run Text=" tokens"/>
-							</TextBlock>
+					</StackPanel>
+					<Separator/>
+					<StackPanel Spacing="2">
+						<TextBlock Text="Step 2 (Vision)" FontWeight="SemiBold"/>
+						<TextBlock FontSize="12">
+							<Run Text="Input: "/>
+							<Run Text="{Binding ModeVM.TextEstimate.InputTokens}"/>
+							<Run Text=" tokens"/>
+						</TextBlock>
 							<TextBlock FontSize="12">
 								<Run Text="Output: "/>
 								<Run Text="{Binding ModeVM.TextEstimate.OutputTokens}"/>

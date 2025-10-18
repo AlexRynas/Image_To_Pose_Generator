@@ -151,8 +151,25 @@ public partial class ModeSelectionViewModel : ViewModelBase
                 VisionEstimate = new StepCostEstimate();
             }
 
-            // Step 2: Text
-            TextEstimate = await _priceEstimator.EstimateTextAsync(rates, roughText ?? string.Empty, assumedOut);
+            // Step 2: Text - now also uses vision if image is present
+            if (!string.IsNullOrWhiteSpace(imagePath))
+            {
+                // GenerateRigAsync now also uses vision, so estimate as vision request
+                TextEstimate = await _priceEstimator.EstimateVisionAsync(rates, imagePath, roughText ?? string.Empty);
+                // override with assumed output tokens per mode
+                TextEstimate = new StepCostEstimate
+                {
+                    InputTokens = TextEstimate.InputTokens,
+                    OutputTokens = assumedOut,
+                    InputUsd = TextEstimate.InputUsd,
+                    OutputUsd = Math.Round(assumedOut / 1_000_000m * rates.OutputPerMillion, 6),
+                    TotalUsd = TextEstimate.InputUsd + Math.Round(assumedOut / 1_000_000m * rates.OutputPerMillion, 6)
+                };
+            }
+            else
+            {
+                TextEstimate = await _priceEstimator.EstimateTextAsync(rates, roughText ?? string.Empty, assumedOut);
+            }
             
             ModeSelectionViewModelLogs.EstimatesComputed(_logger, VisionEstimate.TotalUsd, TextEstimate.TotalUsd);
         }

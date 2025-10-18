@@ -196,6 +196,7 @@ public partial class InputViewModel : ViewModelBase
 
             // Pass to review view model
             _wizard.ReviewViewModel.ExtendedPoseText = result.Text;
+            _wizard.ReviewViewModel.ImagePath = ImagePath;
 
             // Navigate to review step
             _wizard.NavigateToStep(WizardStep.Review);

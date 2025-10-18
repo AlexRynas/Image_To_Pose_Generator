@@ -14,7 +14,7 @@ namespace ImageToPose.Core.Services;
 public interface IOpenAIService
 {
     Task<ExtendedPose> AnalyzePoseAsync(PoseInput input, CancellationToken cancellationToken = default);
-    Task<PoseRig> GenerateRigAsync(string extendedPoseText, CancellationToken cancellationToken = default);
+    Task<PoseRig> GenerateRigAsync(string extendedPoseText, string? imagePath = null, CancellationToken cancellationToken = default);
     Task<bool> ValidateApiKeyAsync(string apiKey, CancellationToken cancellationToken = default);
 
     // Mode & Pricing hooks
@@ -319,9 +319,13 @@ public class OpenAIService : IOpenAIService
         return new ExtendedPose { Text = content!.Trim() };
     }
 
-    public async Task<PoseRig> GenerateRigAsync(string extendedPoseText, CancellationToken cancellationToken = default)
+    public async Task<PoseRig> GenerateRigAsync(string extendedPoseText, string? imagePath = null, CancellationToken cancellationToken = default)
     {
-        using var _ = _logger.BeginScope(new Dictionary<string, object> { ["Operation"] = "GenerateRig" });
+        using var _ = _logger.BeginScope(new Dictionary<string, object>
+        {
+            ["Operation"] = "GenerateRig",
+            ["ImagePath"] = imagePath ?? "null"
+        });
         OpenAIServiceLogs.GeneratingRig(_logger, extendedPoseText.Length);
 
         if (string.IsNullOrWhiteSpace(extendedPoseText))
@@ -346,16 +350,33 @@ public class OpenAIService : IOpenAIService
         var replacement = $"POSE_TEXT_START{Environment.NewLine}{extendedPoseText}{Environment.NewLine}POSE_TEXT_END";
         var prompt = Regex.Replace(promptTemplate, pattern, replacement, RegexOptions.IgnoreCase);
 
-        // O-series models don't support system messages, so we combine everything into the user message
+        // Build messages - attach image if provided
         var messages = new List<ChatMessage>();
-        if (IsOSeriesModel(model))
+
+        if (!string.IsNullOrWhiteSpace(imagePath) && File.Exists(imagePath))
         {
-            messages.Add(new UserChatMessage($"{prompt}\n\nGenerate the rig following the instructions above."));
+            // Read the image and attach as an image content part (binary)
+            byte[] bytes = await File.ReadAllBytesAsync(imagePath, cancellationToken);
+            var imagePart = ChatMessageContentPart.CreateImagePart(BinaryData.FromBytes(bytes), DetectImageMime(imagePath));
+
+            // For vision requests, use UserChatMessage with both text and image
+            messages.Add(new UserChatMessage(
+                ChatMessageContentPart.CreateTextPart(prompt),
+                imagePart
+            ));
         }
         else
         {
-            messages.Add(new SystemChatMessage(prompt));
-            messages.Add(new UserChatMessage("Generate the rig following the instructions above."));
+            // O-series models don't support system messages, so we combine everything into the user message
+            if (IsOSeriesModel(model))
+            {
+                messages.Add(new UserChatMessage($"{prompt}\n\nGenerate the rig following the instructions above."));
+            }
+            else
+            {
+                messages.Add(new SystemChatMessage(prompt));
+                messages.Add(new UserChatMessage("Generate the rig following the instructions above."));
+            }
         }
 
         var chat = client.GetChatClient(model);

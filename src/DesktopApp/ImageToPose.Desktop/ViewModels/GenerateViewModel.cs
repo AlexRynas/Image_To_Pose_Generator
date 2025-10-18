@@ -27,6 +27,9 @@ public partial class GenerateViewModel : ViewModelBase
     private string _extendedPoseDescription = string.Empty;
 
     [ObservableProperty]
+    private string _imagePath = string.Empty;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanCopyToClipboard))]
     [NotifyPropertyChangedFor(nameof(CanSaveJson))]
     private string _generatedJson = string.Empty;
@@ -86,7 +89,7 @@ public partial class GenerateViewModel : ViewModelBase
 
         try
         {
-            var result = await _openAIService.GenerateRigAsync(ExtendedPoseDescription);
+            var result = await _openAIService.GenerateRigAsync(ExtendedPoseDescription, ImagePath);
             GenerateViewModelLogs.RigGenerated(_logger, result.Bones.Count);
             
             // Convert to pretty JSON
